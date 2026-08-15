@@ -6,7 +6,7 @@ Reference Plane.pushbutton / ui/
 Urbana Bridge Generator — Revit 2024.3 / pyRevit 6.4.0 / IronPython 2.7
 
 Three-tab setup tool:
-  Tab ① — Global Parameters: create/validate all 25 GPs and formulas.
+  Tab ③ — Global Parameters: create/validate all 25 GPs and formulas.
   Tab ② — Bridge Configuration: select Span/Width/CRNK/Camber, load families.
   Tab ③ — Reference Planes: create/update the parametric reference skeleton.
 
@@ -190,6 +190,7 @@ class BridgeSetupWindow(object):
         self._config_objects = []                         # config dicts for selected span
         self._current_config = None                       # selected config dict
         self._current_is_special_22 = False               # derived from current_config
+        self._staged_config = None                        # temporarily saved config
 
         self._load_xaml()
         self._bind_controls()
@@ -223,6 +224,7 @@ class BridgeSetupWindow(object):
 
         # --- Shared footer ---
         self._footer_status = w.FindName("FooterStatus")
+        self._main_tabs     = w.FindName("MainTabs")
 
         # --- Tab ① Bridge Configuration controls ---
         self._span_combo     = w.FindName("SpanCombo")
@@ -275,13 +277,13 @@ class BridgeSetupWindow(object):
         w.FindName("BtnBrowsePacker").Click += lambda s, e: self._on_browse_family("Packer",  self._packer_path_box, self._packer_type_combo)
         w.FindName("BtnLoadFamilies").Click += self._on_load_families
 
-        # --- Wire Tab ② / ③ events ---
+        # --- Wire Tab ③ / ④ events ---
         w.FindName("BtnCreateParams").Click += self._on_create_params
         w.FindName("BtnCreatePlanes").Click += self._on_create_planes
         w.FindName("BtnClose").Click        += self._on_close
 
     # ------------------------------------------------------------------
-    # Tab ① — Configuration tab population
+    # Tab ② — Configuration tab population
     # ------------------------------------------------------------------
 
     def _populate_config_tab(self):
@@ -314,29 +316,15 @@ class BridgeSetupWindow(object):
 
         # Handle missing GPs
         if length_mm_gp is None or clear_span_mm_gp is None or crank_mm_gp is None or camber_mm_gp is None:
-            # Set to index 0 (Tab 1 - Global Parameters) since they are missing
-            self._window.MainTabs.SelectedIndex = 0
-            
-            # Setup configuration dropdown as Not Initialized
+            # Setup configuration dropdown as default
             self._span_combo.SelectedIndex = 0
             self._width_combo.SelectedIndex = 0
-            self._config_combo.Items.Clear()
-            self._config_combo.Items.Add("Not Initialized")
-            self._config_combo.SelectedIndex = 0
-            self._config_objects = []
-            self._current_config = None
+            self._rebuild_config_combo(self._span_values[0])
             self._camber_box.Text = "20"
-            self._clear_derived_preview()
-            
-            # Populate ConfigStatusList with warnings
-            self._config_items.Clear()
-            for gp_name in ["Length", "Clear Span", "Crank Length", "Camber"]:
-                if existing_gp.get(gp_name) is None:
-                    self._config_items.Add(StatusItem(
-                    gp_name, "Error",
-                    "GP '{0}' not found — run Tab ① first to create all parameters.".format(gp_name)
-                ))
+            self._update_derived_preview()
             self._config_status_card.Visibility = System_Windows_Visibility_Visible()
+            self._config_items.Clear()
+            self._config_items.Add(StatusItem("Configuration", "Skipped", "Bridge Configuration has not been staged yet."))
             
         else:
             # --- Match Span ---
@@ -463,7 +451,7 @@ class BridgeSetupWindow(object):
                 tb.Text = "—"
 
     # ------------------------------------------------------------------
-    # Tab ① — Event handlers
+    # Tab ② — Event handlers
     # ------------------------------------------------------------------
 
     def _on_span_changed(self, sender, args):
@@ -484,28 +472,8 @@ class BridgeSetupWindow(object):
         self._update_derived_preview()
 
     def _on_apply_config(self, sender, args):
-        """Validate and write bridge configuration to Global Parameters.
-        Also loads selected families if validation passes.
-        """
-        # --- Pre-flight Check: Are GPs initialized? ---
-        try:
-            from core.refplane_manager import read_gp_values_mm
-            verify_gp = read_gp_values_mm(
-                self._doc,
-                ["Length", "Clear Span", "Crank Length", "Camber"]
-            )
-            missing = [p for p in ["Length", "Clear Span", "Crank Length", "Camber"] if verify_gp.get(p) is None]
-            if missing:
-                self._set_footer("Bridge Configuration cannot be applied yet. Required Global Parameters are missing. Go to Tab ①.")
-                self._config_items.Clear()
-                for p in missing:
-                    self._config_items.Add(StatusItem(p, "Missing", "Create/validate Global Parameters in Tab ① first."))
-                self._config_status_card.Visibility = System_Windows_Visibility_Visible()
-                return
-        except Exception:
-            pass
-
-        self._logger.info("Tab ② button clicked — applying Bridge Configuration")
+        """Validate and stage bridge configuration to session state."""
+        self._logger.info("Tab ② button clicked — staging Bridge Configuration")
 
         # --- Validate Span ---
         span_idx = self._span_combo.SelectedIndex
@@ -538,8 +506,8 @@ class BridgeSetupWindow(object):
         # --- Validate Camber ---
         try:
             camber_mm_val = float(self._camber_box.Text.strip())
-            if camber_mm_val <= 0.0:
-                raise ValueError("Camber must be greater than zero.")
+            if camber_mm_val < 0.0:
+                raise ValueError("Camber must be zero or positive.")
         except ValueError as exc:
             self._set_footer("Error: Invalid Camber — " + str(exc))
             return
@@ -551,7 +519,7 @@ class BridgeSetupWindow(object):
 
         cfg_label = config_display_name(cfg)
         self._logger.info(
-            "Applying bridge configuration",
+            "Staging bridge configuration",
             span_m=span_m,
             width_m=width_m,
             config=cfg_label,
@@ -561,81 +529,21 @@ class BridgeSetupWindow(object):
 
         # --- Clear previous config status ---
         self._config_items.Clear()
-        self._set_footer("Applying Bridge Configuration…")
 
-        # --- Transaction ---
-        t = Transaction(self._doc, "Urbana: Apply Bridge Configuration")
-        t.Start()
-        try:
-            updates = [
-                ("Length",       length_mm_val),
-                ("Clear Span",   clear_span_mm_val),
-                ("Crank Length", ck_mm_val),
-                ("Camber",       camber_mm_val),
-            ]
+        # --- Store in Session State ---
+        self._staged_config = {
+            "Length": length_mm_val,
+            "Clear Span": clear_span_mm_val,
+            "Crank Length": ck_mm_val,
+            "Camber": camber_mm_val
+        }
 
-            for gp_name, value_mm_val in updates:
-                ok_set, detail = self._set_gp_value(gp_name, value_mm_val)
-                status = "Updated" if ok_set else "Error"
-                self._config_items.Add(StatusItem(
-                    gp_name, status,
-                    "{0} (from Bridge Configuration)".format(detail),
-                ))
-
-            # Regenerate so formulas recompute (Bearers Length, VJB Distance, etc.)
-            self._doc.Regenerate()
-
-            # --- Verify written values ---
-            verify_map = read_gp_values_mm(
-                self._doc,
-                [gp_name for gp_name, _ in updates],
-            )
-            for i, (gp_name, expected_mm) in enumerate(updates):
-                actual_mm = verify_map.get(gp_name, None)
-                if actual_mm is not None:
-                    diff_ok = abs(actual_mm - expected_mm) < 1.0
-                    if not diff_ok:
-                        self._logger.warning(
-                            "GP value mismatch after Apply",
-                            gp=gp_name,
-                            expected=expected_mm,
-                            actual=actual_mm,
-                        )
-                        # Update the status item to flag mismatch
-                        existing = self._config_items[i]
-                        self._config_items[i] = StatusItem(
-                            existing.Name, "Conflict",
-                            "Verify mismatch: expected {0:.0f} mm, got {1:.0f} mm".format(
-                                expected_mm, actual_mm
-                            ),
-                        )
-
-            t.Commit()
-
-            # --- Update state ---
-            self._current_config = cfg
-            self._current_is_special_22 = is_special_22(cfg)
-
-            # Show the config status card
-            self._config_status_card.Visibility = \
-                System_Windows_Visibility_Visible()
-
-            summary = (
-                "Bridge Configuration applied: {0}, {1:.0f} m span, {2:.1f} m width, "
-                "Crank={3:.0f} mm, Camber={4:.0f} mm"
-            ).format(cfg_label, span_m, width_m, ck_mm_val, camber_mm_val)
-            self._set_footer(summary)
-            self._logger.info(summary)
-
-            # Refresh Tab ③ prereq status so user sees updated values
-            self._populate_tab2_prereqs()
-
-        except Exception as exc:
-            t.RollBack()
-            msg = "Error applying bridge configuration: {0}".format(str(exc))
-            self._logger.error(msg, exc=exc)
-            self._config_items.Add(StatusItem("FATAL ERROR", "Error", msg))
-            self._set_footer("Error — transaction rolled back.")
+        self._config_items.Add(StatusItem(
+            "Configuration", "Updated",
+            "Bridge Configuration staged in session. Proceed to Tab ③."
+        ))
+        
+        self._set_footer("Configuration staged successfully. Proceed to Tab ③.")
 
     def _set_gp_value(self, gp_name, value_mm_val):
         """Write a value (in mm) to a named Global Parameter.
@@ -654,7 +562,7 @@ class BridgeSetupWindow(object):
             gp_id = GlobalParametersManager.FindByName(self._doc, gp_name)
             if gp_id is None or element_id_value(gp_id) == -1:
                 return False, (
-                    "GP '{0}' not found — run Tab ① first to create all parameters."
+                    "GP '{0}' not found — run Tab ③ first to create all parameters."
                 ).format(gp_name)
 
             gp = self._doc.GetElement(gp_id)
@@ -817,7 +725,14 @@ class BridgeSetupWindow(object):
 
     def _on_create_params(self, sender, args):
         """Handle 'Create / Update Global Parameters' click."""
-        self._logger.info("Tab ① button clicked — starting Global Parameter creation")
+        if not hasattr(self, "_staged_config") or self._staged_config is None:
+            self._set_footer("Bridge Configuration has not been completed.")
+            self._param_items.Clear()
+            self._param_items.Add(StatusItem("FATAL ERROR", "Error", "Configure the bridge in Tab ② before creating the controlling Global Parameters."))
+            self._param_summary.Text = "Bridge Configuration missing."
+            return
+
+        self._logger.info("Tab ③ button clicked — starting Global Parameter creation")
         self._param_items.Clear()
         self._set_footer("Creating Global Parameters…")
 
@@ -826,9 +741,53 @@ class BridgeSetupWindow(object):
         try:
             t = Transaction(self._doc, "Create/Update Global Parameters")
             t.Start()
+            
+            # 1. Create/find required GPs & Establish formulas
             results = ensure_all(self._doc, DEFINITIONS)
+            
+            # 2. Write staged Bridge Configuration values
+            updates = [
+                ("Length",       self._staged_config["Length"]),
+                ("Clear Span",   self._staged_config["Clear Span"]),
+                ("Crank Length", self._staged_config["Crank Length"]),
+                ("Camber",       self._staged_config["Camber"]),
+            ]
+
+            for gp_name, value_mm_val in updates:
+                ok_set, detail = self._set_gp_value(gp_name, value_mm_val)
+                status = "Updated" if ok_set else "Error"
+                
+                # Check if it was already in results
+                found = False
+                for r in results:
+                    if r["name"] == gp_name:
+                        r["status"] = status
+                        r["detail"] = "{0} (from Bridge Configuration)".format(detail)
+                        found = True
+                        break
+                if not found:
+                    results.append({"name": gp_name, "status": status, "detail": "{0} (from Bridge Configuration)".format(detail)})
+
+            # 3. Regenerate if required
+            self._doc.Regenerate()
+            
             t.Commit()
             tg.Assimilate()
+
+            # 4. Verify values (logging warnings if they mismatched)
+            try:
+                from core.refplane_manager import read_gp_values_mm
+                verify_map = read_gp_values_mm(
+                    self._doc,
+                    [gp_name for gp_name, _ in updates]
+                )
+                for gp_name, expected_mm in updates:
+                    actual_mm = verify_map.get(gp_name, None)
+                    if actual_mm is not None:
+                        if abs(actual_mm - expected_mm) >= 1.0:
+                            self._logger.warning("GP value mismatch after creation", gp_name=gp_name, expected=expected_mm, actual=actual_mm)
+            except Exception as e:
+                self._logger.warning("Failed to verify GP values: " + str(e))
 
             for r in results:
                 self._param_items.Add(StatusItem(r["name"], r["status"], r.get("detail", "")))
@@ -837,6 +796,7 @@ class BridgeSetupWindow(object):
             n_existing = sum(1 for r in results if r["status"] == "Existing")
             n_errors   = sum(1 for r in results if r["status"] == "Error")
             n_conflict = sum(1 for r in results if r["status"] == "Conflict")
+            n_updated  = sum(1 for r in results if r["status"] == "Updated")
 
             summary = (
                 "{0} created, {1} existing, {2} updated/formula applied"
@@ -844,15 +804,15 @@ class BridgeSetupWindow(object):
             ).format(
                 n_created,
                 n_existing,
-                len(results) - n_created - n_existing - n_errors - n_conflict,
+                len(results) - n_created - n_existing - n_errors - n_conflict - n_updated + n_updated,
                 " | {0} conflict(s)".format(n_conflict) if n_conflict else "",
                 " | {0} error(s)".format(n_errors) if n_errors else "",
             )
             self._param_summary.Text = summary
             self._set_footer("Global Parameters done. " + summary)
-            self._logger.info("Tab ① complete", summary=summary)
+            self._logger.info("Tab ③ complete", summary=summary)
 
-            # Refresh Tab ③ prereq status
+            # Refresh Tab ④ prereq status
             self._populate_tab2_prereqs()
 
         except Exception as exc:
@@ -862,10 +822,6 @@ class BridgeSetupWindow(object):
             self._param_items.Add(StatusItem("FATAL ERROR", "Error", msg))
             self._param_summary.Text = msg
             self._set_footer("Error — see status list for details.")
-
-    # ------------------------------------------------------------------
-    # Tab ③ — Create Reference Planes
-    # ------------------------------------------------------------------
 
     def _on_create_planes(self, sender, args):
         """Handle 'Create / Update Reference Planes' click."""

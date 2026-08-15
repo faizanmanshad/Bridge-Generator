@@ -135,11 +135,16 @@ The currently developed tool is `ReferencePlane.pushbutton`. Historically named 
 
 The current tab order for the Bridge Setup interface is strictly ordered as:
 
-1. **Global Parameters**
+1. **Load Families**
 2. **Bridge Configuration**
-3. **Reference Planes**
+3. **Global Parameters**
+4. **Reference Planes**
 
-This logical order exists because Global Parameters must exist first; Bridge Configuration then writes controlling values to them; and finally, the Reference Plane system uses the configured project state to generate geometry.
+This logical order exists because:
+- **Families** are loaded first.
+- **Bridge Configuration** is staged in session (without immediately modifying the Revit model).
+- **Global Parameters** are created afterward and initialized from the stored configuration.
+- Finally, the **Reference Plane** system uses the configured project state to generate geometry.
 
 ## Global Parameters
 
