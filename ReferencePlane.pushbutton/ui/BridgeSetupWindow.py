@@ -191,6 +191,9 @@ class BridgeSetupWindow(object):
         self._current_config = None                       # selected config dict
         self._current_is_special_22 = False               # derived from current_config
         self._staged_config = None                        # temporarily saved config
+        
+        self._mapping_source_state = {}                   # raw un-applied selections
+        self._mapped_gp_inputs = {}                       # applied validated values for GP creation
 
         self._load_xaml()
         self._bind_controls()
@@ -256,6 +259,52 @@ class BridgeSetupWindow(object):
         self._cb_joist   = w.FindName("CbJoist")
         self._cb_packer  = w.FindName("CbPacker")
 
+        # --- Mapping UI elements ---
+        self._beam_mapping_panel   = w.FindName("BeamMappingPanel")
+        self._bearer_mapping_panel = w.FindName("BearerMappingPanel")
+        self._joist_mapping_panel  = w.FindName("JoistMappingPanel")
+        self._packer_mapping_panel = w.FindName("PackerMappingPanel")
+
+        self._beam_loaded_type     = w.FindName("BeamLoadedTypeLabel")
+        self._bearer_loaded_type   = w.FindName("BearerLoadedTypeLabel")
+        self._joist_loaded_type    = w.FindName("JoistLoadedTypeLabel")
+        self._packer_loaded_type   = w.FindName("PackerLoadedTypeLabel")
+
+        self._beam_height_combo    = w.FindName("BeamHeightCombo")
+        self._beam_width_combo     = w.FindName("BeamWidthCombo")
+        self._beam_web_combo       = w.FindName("BeamWebCombo")
+        self._beam_height_val      = w.FindName("BeamHeightValue")
+        self._beam_width_val       = w.FindName("BeamWidthValue")
+        self._beam_web_val         = w.FindName("BeamWebValue")
+
+        self._beam_flange_combo    = w.FindName("BeamFlangeCombo")
+        self._beam_flange_val      = w.FindName("BeamFlangeValue")
+
+        self._bearer_width_combo   = w.FindName("BearerWidthCombo")
+        self._bearer_width_val     = w.FindName("BearerWidthValue")
+
+        self._joist_height_combo   = w.FindName("JoistHeightCombo")
+        self._joist_height_val     = w.FindName("JoistHeightValue")
+
+        self._packer_height_combo  = w.FindName("PackerHeightCombo")
+        self._packer_width_combo   = w.FindName("PackerWidthCombo")
+        self._packer_height_val    = w.FindName("PackerHeightValue")
+        self._packer_width_val     = w.FindName("PackerWidthValue")
+
+        # Wire mapping combo events
+        self._beam_height_combo.SelectionChanged   += lambda s,e: self._on_mapping_changed(s, self._beam_height_val, "Beam", "UB_Height")
+        self._beam_width_combo.SelectionChanged    += lambda s,e: self._on_mapping_changed(s, self._beam_width_val, "Beam", "Beam Centerline", lambda v: v/2.0)
+        self._beam_web_combo.SelectionChanged      += lambda s,e: self._on_mapping_changed(s, self._beam_web_val, "Beam", "Beam Web")
+        self._beam_flange_combo.SelectionChanged   += lambda s,e: self._on_mapping_changed(s, self._beam_flange_val, "Beam", "Beam Flange")
+        
+        self._bearer_width_combo.SelectionChanged  += lambda s,e: self._on_mapping_changed(s, self._bearer_width_val, "Bearer", "Bearer Width", extra_key="Bearers Width")
+        
+        self._joist_height_combo.SelectionChanged  += lambda s,e: self._on_mapping_changed(s, self._joist_height_val, "Joist", "Vertical_Joist_Height")
+
+        self._packer_height_combo.SelectionChanged += lambda s,e: self._on_mapping_changed(s, self._packer_height_val, "Packer", "GP_Framing_Height", extra_key="Horizontal_Joist_Height")
+        self._packer_width_combo.SelectionChanged  += lambda s,e: self._on_mapping_changed(s, self._packer_width_val, "Packer", "Horizontal_Joist_Width")
+
+        self._mapping_status_text = w.FindName("MappingStatusText")
         self._family_status_list = w.FindName("FamilyStatusList")
 
         # --- Bind observable collections to controls ---
@@ -276,6 +325,11 @@ class BridgeSetupWindow(object):
         w.FindName("BtnBrowseJoist").Click  += lambda s, e: self._on_browse_family("Joist",   self._joist_path_box,  self._joist_type_combo)
         w.FindName("BtnBrowsePacker").Click += lambda s, e: self._on_browse_family("Packer",  self._packer_path_box, self._packer_type_combo)
         w.FindName("BtnLoadFamilies").Click += self._on_load_families
+        w.FindName("BtnApplyMapping").Click += self._on_apply_mapping
+        
+        sub_tabs = w.FindName("LoadFamiliesSubTabs")
+        if sub_tabs:
+            sub_tabs.SelectionChanged += self._on_subtab_changed
 
         # --- Wire Tab ③ / ④ events ---
         w.FindName("BtnCreateParams").Click += self._on_create_params
@@ -509,7 +563,7 @@ class BridgeSetupWindow(object):
             if camber_mm_val < 0.0:
                 raise ValueError("Camber must be zero or positive.")
         except ValueError as exc:
-            self._set_footer("Error: Invalid Camber — " + str(exc))
+            self._set_footer("Error loading config: {0}".format(str(exc)))
             return
 
         # --- Compute derived values ---
@@ -676,11 +730,21 @@ class BridgeSetupWindow(object):
             return
 
         self._set_footer("Loading families…")
-        t = Transaction(self._doc, "Urbana: Load Bridge Families")
-        t.Start()
+        
+        t = None
         try:
+            from Autodesk.Revit.DB import Transaction, TransactionStatus
+            t = Transaction(self._doc, "Urbana: Load Bridge Families")
+            status = t.Start()
+            
+            if status != TransactionStatus.Started:
+                raise Exception("Could not start Revit transaction. Status: {0}".format(status))
+
             results = load_selected_families(self._doc, selections)
-            t.Commit()
+            
+            commit_status = t.Commit()
+            if commit_status != TransactionStatus.Committed:
+                raise Exception("Could not commit Revit transaction. Status: {0}".format(commit_status))
 
             for r in results:
                 self._family_items.Add(StatusItem(r["name"], r["status"], r["detail"]))
@@ -696,13 +760,27 @@ class BridgeSetupWindow(object):
             )
             self._set_footer("Families: " + summary)
             self._logger.info("Family load complete", summary=summary)
+            
+            # --- Populate Parameter Mapping UI ---
+            # Now that families are loaded, refresh the mapping panels
+            self._refresh_parameter_mapping()
 
-        except Exception as exc:
-            t.RollBack()
-            msg = "Error during family load: {0}".format(str(exc))
-            self._logger.error(msg, exc=exc)
+        except Exception as original_ex:
+            if t is not None:
+                try:
+                    from Autodesk.Revit.DB import TransactionStatus
+                    if t.GetStatus() == TransactionStatus.Started:
+                        t.RollBack()
+                except Exception:
+                    # Do NOT replace original_ex.
+                    # Rollback cleanup must never mask original failure.
+                    pass
+            
+            msg = "Error during family load: {0}".format(str(original_ex))
+            self._logger.error(msg, exc=original_ex)
             self._family_items.Add(StatusItem("FATAL ERROR", "Error", msg))
             self._set_footer("Error — family load rolled back.")
+            raise
 
     # ------------------------------------------------------------------
     # Tab ② — Required-GP pre-population (status unknown until run)
@@ -716,11 +794,185 @@ class BridgeSetupWindow(object):
             if gp_id and element_id_value(gp_id) != -1:
                 item = StatusItem(name, "Existing", "Present in document")
             else:
-                item = StatusItem(name, "Missing", "Run Tab ① first")
+                item = StatusItem(name, "Missing", "Create or update them in the Global Parameters tab if any are missing.")
             self._req_items.Add(item)
 
+    def _on_subtab_changed(self, sender, args):
+        """Triggered when the user switches between Load Families and Parameter Mapping."""
+        # SelectionChanged bubbles up, so ensure this is the SubTabControl itself
+        if args.Source == sender:
+            # We can optionally check if they switched to the Parameter Mapping tab
+            # But refreshing is safe and idempotent.
+            self._refresh_parameter_mapping()
+
+    def _find_loaded_symbol(self, type_name):
+        """Find the actual FamilySymbol in the document by its exact type name."""
+        from Autodesk.Revit.DB import FilteredElementCollector, FamilySymbol, BuiltInParameter
+        # Use .ToElements() to ensure proper IronPython object wrapping
+        for sym in FilteredElementCollector(self._doc).OfClass(FamilySymbol).ToElements():
+            try:
+                # Safe fallback to avoid IronPython AttributeError on .Name
+                param = sym.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM)
+                sym_name = param.AsString() if param else getattr(sym, "Name", "")
+                if sym_name == type_name:
+                    return sym
+            except Exception:
+                pass
+        return None
+
+    def _refresh_parameter_mapping(self):
+        """Enable and populate mapping panels for currently loaded families."""
+        from core.family_manager import STATUS_LOADED, STATUS_ALREADY_LOADED, enumerate_symbol_parameters
+        
+        panels_map = {
+            "Beam":   (self._beam_mapping_panel, self._beam_loaded_type, [self._beam_height_combo, self._beam_width_combo, self._beam_web_combo, self._beam_flange_combo], self._beam_type_combo),
+            "Bearer": (self._bearer_mapping_panel, self._bearer_loaded_type, [self._bearer_width_combo], self._bearer_type_combo),
+            "Joist":  (self._joist_mapping_panel, self._joist_loaded_type, [self._joist_height_combo], self._joist_type_combo),
+            "Packer": (self._packer_mapping_panel, self._packer_loaded_type, [self._packer_height_combo, self._packer_width_combo], self._packer_type_combo)
+        }
+        
+        class ParamItem(object):
+            def __init__(self, name, value):
+                self.name = name
+                self.value = value
+            def ToString(self):
+                return self.name
+        
+        for item in self._family_items:
+            component = item.Name
+            status = item.Status
+            
+            panel_data = panels_map.get(component)
+            if not panel_data:
+                continue
+                
+            panel, label, combos, type_combo = panel_data
+            
+            if status in (STATUS_LOADED, STATUS_ALREADY_LOADED):
+                # Valid loaded family according to the status list
+                if type_combo and type_combo.SelectedItem:
+                    type_name = str(type_combo.SelectedItem)
+                    if type_name not in ("Select family first", "Select Type..."):
+                        
+                        symbol = self._find_loaded_symbol(type_name)
+                        if symbol:
+                            # Clear state for this component if type changed
+                            old_label_text = label.Text
+                            if old_label_text != "Loaded Type: {0}".format(type_name):
+                                # Clear only this component's mappings
+                                keys_to_remove = [k for k, v in self._mapping_source_state.items() if v["component"] == component]
+                                for k in keys_to_remove:
+                                    del self._mapping_source_state[k]
+                                if keys_to_remove:
+                                    self._mapped_gp_inputs.clear()
+                                    self._mapping_status_text.Text = "Modified — requires Apply Parameter Mapping"
+                                    self._mapping_status_text.Foreground = _BRUSH_ORANGE
+                                    
+                            panel.IsEnabled = True
+                            panel.Opacity = 1.0
+                            label.Text = "Loaded Type: {0}".format(type_name)
+                            
+                            params = enumerate_symbol_parameters(symbol)
+                            
+                            for combo in combos:
+                                # We only clear and repopulate if the type changed, or if it's currently empty
+                                if combo.Items.Count == 0 or old_label_text != "Loaded Type: {0}".format(type_name):
+                                    combo.Items.Clear()
+                                    for p in params:
+                                        combo.Items.Add(ParamItem(p["name"], p["value"]))
+                                    # We leave blank (user must select)
+                        else:
+                            # We failed to find the symbol in the document
+                            pass
+
+    def _on_mapping_changed(self, combo, value_label, component_name, gp_name, transformer=None, extra_key=None):
+        """Called when a user selects a parameter in a mapping dropdown."""
+        item = combo.SelectedItem
+        if not item:
+            value_label.Text = "-"
+            return
+            
+        raw_val = item.value
+        
+        # Format for UI display (in mm)
+        from core.units import internal_to_mm
+        mm_val = internal_to_mm(raw_val)
+        value_label.Text = "{0:.1f} mm".format(mm_val)
+        
+        # Store in source state (the raw value is stored)
+        self._mapping_source_state[gp_name] = {
+            "component": component_name,
+            "parameter_name": item.name,
+            "raw_value": raw_val,
+            "transformer": transformer,
+            "extra_key": extra_key
+        }
+        
+        # Mark dirty
+        self._mapped_gp_inputs.clear()
+        self._mapping_status_text.Text = "Modified — requires Apply Parameter Mapping"
+        self._mapping_status_text.Foreground = _BRUSH_ORANGE
+
+    def _on_apply_mapping(self, sender, args):
+        """Validate mappings and commit them for Tab ③."""
+        self._logger.info("Apply Parameter Mapping clicked")
+        
+        required_mappings = {
+            "Beam": ["UB_Height", "Beam Centerline", "Beam Web", "Beam Flange"],
+            "Bearer": ["Bearer Width"],
+            "Joist": ["Vertical_Joist_Height"],
+            "Packer": ["GP_Framing_Height", "Horizontal_Joist_Width"]
+        }
+        
+        missing = []
+        checked_components = 0
+        for component, keys in required_mappings.items():
+            # Only check components that are actually loaded (enabled panels)
+            panel = None
+            if component == "Beam": panel = self._beam_mapping_panel
+            elif component == "Bearer": panel = self._bearer_mapping_panel
+            elif component == "Joist": panel = self._joist_mapping_panel
+            elif component == "Packer": panel = self._packer_mapping_panel
+            
+            if panel and panel.IsEnabled:
+                checked_components += 1
+                for key in keys:
+                    if key not in self._mapping_source_state:
+                        missing.append("{0}: mapping for {1} not selected".format(component, key))
+                        
+        if checked_components == 0:
+            msg = "No loaded family types are available for Parameter Mapping."
+            self._mapping_status_text.Text = msg
+            self._mapping_status_text.Foreground = _BRUSH_RED
+            self._set_footer("Parameter mapping failed. Load at least one component first.")
+            return
+            
+        if missing:
+            msg = "Parameter Mapping incomplete:\n" + "\n".join(missing)
+            self._mapping_status_text.Text = msg
+            self._mapping_status_text.Foreground = _BRUSH_RED
+            self._set_footer("Mapping validation failed. Check missing dropdowns.")
+            return
+            
+        # All required mapped, now populate the output GP inputs
+        self._mapped_gp_inputs.clear()
+        for gp_name, data in self._mapping_source_state.items():
+            raw_val = data["raw_value"]
+            transformer = data["transformer"]
+            extra_key = data["extra_key"]
+            
+            final_val = transformer(raw_val) if transformer else raw_val
+            self._mapped_gp_inputs[gp_name] = final_val
+            if extra_key:
+                self._mapped_gp_inputs[extra_key] = final_val
+                
+        self._mapping_status_text.Text = "Mapping successfully applied."
+        self._mapping_status_text.Foreground = _BRUSH_GREEN
+        self._set_footer("Parameter mapping successfully committed. Proceed to Tab ③.")
+        self._logger.info("Parameter mapping applied successfully", keys=self._mapped_gp_inputs.keys())
+
     # ------------------------------------------------------------------
-    # Tab ② — Create Global Parameters
+    # Tab ③ - Create Global Parameters
     # ------------------------------------------------------------------
 
     def _on_create_params(self, sender, args):
@@ -732,26 +984,64 @@ class BridgeSetupWindow(object):
             self._param_summary.Text = "Bridge Configuration missing."
             return
 
-        self._logger.info("Tab ③ button clicked — starting Global Parameter creation")
+        self._logger.info("Tab ③ button clicked - starting Global Parameter creation")
         self._param_items.Clear()
-        self._set_footer("Creating Global Parameters…")
+        
+        # Determine existing project GP state
+        existing_gp_names = set()
+        for gp_name in [d["name"] for d in DEFINITIONS]:
+            gp_id = GlobalParametersManager.FindByName(self._doc, gp_name)
+            if gp_id and element_id_value(gp_id) != -1:
+                existing_gp_names.add(gp_name)
+        
+        is_new_project = len(existing_gp_names) == 0
+        
+        # Check required family mappings ONLY if new project
+        required_mappings = [
+            "UB_Height", "Beam Centerline", "Beam Web", "Beam Flange", 
+            "Bearer Width", "Bearers Width", "Vertical_Joist_Height", 
+            "GP_Framing_Height", "Horizontal_Joist_Height", "Horizontal_Joist_Width"
+        ]
+        
+        if is_new_project:
+            missing_mappings = [m for m in required_mappings if m not in self._mapped_gp_inputs]
+            if missing_mappings:
+                self._set_footer("Parameter Mapping incomplete.")
+                self._param_items.Add(StatusItem("Action Required", "Incomplete", "Complete Parameter Mapping for Beam, Bearer, Joist, and Packer in Tab ① before creating initial Global Parameters."))
+                self._param_summary.Text = "Parameter Mapping incomplete: " + ", ".join(missing_mappings)
+                return
 
-        tg = TransactionGroup(self._doc, "Urbana: Create Global Parameters")
-        tg.Start()
+        self._set_footer("Creating/Updating Global Parameters.")
+
+        tg = None
+        t = None
         try:
+            from Autodesk.Revit.DB import Transaction, TransactionGroup, TransactionStatus
+            tg = TransactionGroup(self._doc, "Urbana: Create Global Parameters")
+            if tg.Start() != TransactionStatus.Started:
+                raise Exception("Could not start TransactionGroup.")
+                
             t = Transaction(self._doc, "Create/Update Global Parameters")
-            t.Start()
+            if t.Start() != TransactionStatus.Started:
+                raise Exception("Could not start Transaction.")
             
             # 1. Create/find required GPs & Establish formulas
             results = ensure_all(self._doc, DEFINITIONS)
             
             # 2. Write staged Bridge Configuration values
-            updates = [
-                ("Length",       self._staged_config["Length"]),
-                ("Clear Span",   self._staged_config["Clear Span"]),
-                ("Crank Length", self._staged_config["Crank Length"]),
-                ("Camber",       self._staged_config["Camber"]),
-            ]
+            updates = []
+            if self._staged_config:
+                updates.extend([
+                    ("Length",       self._staged_config["Length"]),
+                    ("Clear Span",   self._staged_config["Clear Span"]),
+                    ("Crank Length", self._staged_config["Crank Length"]),
+                    ("Camber",       self._staged_config["Camber"]),
+                ])
+            
+            # 3. Append NEW mapped internal values (convert to mm for our unified updates list)
+            for gp_name, raw_val in self._mapped_gp_inputs.items():
+                if gp_name in [d["name"] for d in DEFINITIONS]:
+                    updates.append((gp_name, raw_val * 304.8))
 
             for gp_name, value_mm_val in updates:
                 ok_set, detail = self._set_gp_value(gp_name, value_mm_val)
@@ -771,8 +1061,10 @@ class BridgeSetupWindow(object):
             # 3. Regenerate if required
             self._doc.Regenerate()
             
-            t.Commit()
-            tg.Assimilate()
+            if t.Commit() != TransactionStatus.Committed:
+                raise Exception("Could not commit Transaction.")
+            if tg.Assimilate() != TransactionStatus.Committed:
+                raise Exception("Could not assimilate TransactionGroup.")
 
             # 4. Verify values (logging warnings if they mismatched)
             try:
@@ -815,13 +1107,28 @@ class BridgeSetupWindow(object):
             # Refresh Tab ④ prereq status
             self._populate_tab2_prereqs()
 
-        except Exception as exc:
-            tg.RollBack()
-            msg = "Error during Global Parameter creation: {0}".format(str(exc))
-            self._logger.error(msg, exc=exc)
+        except Exception as original_ex:
+            if t is not None:
+                try:
+                    from Autodesk.Revit.DB import TransactionStatus
+                    if t.GetStatus() == TransactionStatus.Started:
+                        t.RollBack()
+                except Exception:
+                    pass
+            if tg is not None:
+                try:
+                    from Autodesk.Revit.DB import TransactionStatus
+                    if tg.GetStatus() == TransactionStatus.Started:
+                        tg.RollBack()
+                except Exception:
+                    pass
+            
+            msg = "Error during Global Parameter creation: {0}".format(str(original_ex))
+            self._logger.error(msg, exc=original_ex)
             self._param_items.Add(StatusItem("FATAL ERROR", "Error", msg))
             self._param_summary.Text = msg
             self._set_footer("Error — see status list for details.")
+            raise
 
     def _on_create_planes(self, sender, args):
         """Handle 'Create / Update Reference Planes' click."""
@@ -874,9 +1181,13 @@ class BridgeSetupWindow(object):
 
         self._set_footer("Creating Reference Planes and Dimensions…")
 
-        t = Transaction(self._doc, "Urbana: Create Reference Skeleton")
-        t.Start()
+        t = None
         try:
+            from Autodesk.Revit.DB import Transaction, TransactionStatus
+            t = Transaction(self._doc, "Urbana: Create Reference Skeleton")
+            if t.Start() != TransactionStatus.Started:
+                raise Exception("Could not start Transaction.")
+                
             all_results = []
 
             # -- Step 1: Reference Planes --
@@ -896,7 +1207,8 @@ class BridgeSetupWindow(object):
             )
             all_results.extend(dim_results)
 
-            t.Commit()
+            if t.Commit() != TransactionStatus.Committed:
+                raise Exception("Could not commit Transaction.")
 
             # --- Post-creation: populate status list ---
             from System.Collections.Generic import List
@@ -961,13 +1273,21 @@ class BridgeSetupWindow(object):
                 self._uidoc.Selection.SetElementIds(generated_ids)
                 self._uidoc.ShowElements(generated_ids)
 
-        except Exception as exc:
-            t.RollBack()
-            msg = "Error during Reference Plane creation: {0}".format(str(exc))
-            self._logger.error(msg, exc=exc)
+        except Exception as original_ex:
+            if t is not None:
+                try:
+                    from Autodesk.Revit.DB import TransactionStatus
+                    if t.GetStatus() == TransactionStatus.Started:
+                        t.RollBack()
+                except Exception:
+                    pass
+            
+            msg = "Error during Reference Plane creation: {0}".format(str(original_ex))
+            self._logger.error(msg, exc=original_ex)
             self._plane_items.Add(StatusItem("FATAL ERROR", "Error", msg))
             self._plane_summary.Text = msg
             self._set_footer("Error — transaction rolled back. No partial changes committed.")
+            raise
 
     # ------------------------------------------------------------------
     # Footer / helpers

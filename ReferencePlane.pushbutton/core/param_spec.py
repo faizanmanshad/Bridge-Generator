@@ -112,6 +112,13 @@ DEFINITIONS = [
         "dep_order": 10,
     },
     {
+        "name":      "Beam Flange",
+        "group":     "Other",
+        "value_mm":  10.9,
+        "formula":   None,
+        "dep_order": 10,
+    },
+    {
         "name":      "Vertical_Joist_Height",
         "group":     "Other",
         "value_mm":  190.0,
