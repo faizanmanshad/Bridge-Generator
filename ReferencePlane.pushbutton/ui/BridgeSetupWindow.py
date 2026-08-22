@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# pyright: reportMissingImports=false
 """
 BridgeSetupWindow.py — Code-behind / view-model for BridgeSetupWindow.xaml.
 
@@ -29,20 +30,20 @@ Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
 import os
-import clr
+import clr  # type: ignore
 clr.AddReference("PresentationFramework")
 clr.AddReference("PresentationCore")
 clr.AddReference("WindowsBase")
 clr.AddReference("RevitAPI")
 clr.AddReference("RevitAPIUI")
 
-from System.Windows import Visibility as System_Windows_Visibility_Visible
-from System.Windows.Markup  import XamlReader
-from System.IO              import StreamReader
-from System.Windows.Media   import SolidColorBrush, Color
-from System.Collections.ObjectModel import ObservableCollection
+from System.Windows import Visibility as System_Windows_Visibility_Visible  # type: ignore
+from System.Windows.Markup  import XamlReader  # type: ignore
+from System.IO              import StreamReader  # type: ignore
+from System.Windows.Media   import SolidColorBrush, Color  # type: ignore
+from System.Collections.ObjectModel import ObservableCollection  # type: ignore
 
-from Autodesk.Revit.DB import (
+from Autodesk.Revit.DB import (  # type: ignore
     Transaction,
     TransactionGroup,
     GlobalParametersManager,
@@ -638,7 +639,7 @@ class BridgeSetupWindow(object):
             type_combo  (ComboBox):  The ComboBox to populate with type options.
         """
         try:
-            from Microsoft.Win32 import OpenFileDialog
+            from Microsoft.Win32 import OpenFileDialog  # type: ignore
             
             dlg = OpenFileDialog()
             dlg.Title  = "Select {0} family (.rfa)".format(family_name)
@@ -733,7 +734,7 @@ class BridgeSetupWindow(object):
         
         t = None
         try:
-            from Autodesk.Revit.DB import Transaction, TransactionStatus
+            from Autodesk.Revit.DB import Transaction, TransactionStatus  # type: ignore
             t = Transaction(self._doc, "Urbana: Load Bridge Families")
             status = t.Start()
             
@@ -768,6 +769,7 @@ class BridgeSetupWindow(object):
         except Exception as original_ex:
             if t is not None:
                 try:
+                    # pyrefly: ignore [missing-import]
                     from Autodesk.Revit.DB import TransactionStatus
                     if t.GetStatus() == TransactionStatus.Started:
                         t.RollBack()
@@ -807,7 +809,7 @@ class BridgeSetupWindow(object):
 
     def _find_loaded_symbol(self, type_name):
         """Find the actual FamilySymbol in the document by its exact type name."""
-        from Autodesk.Revit.DB import FilteredElementCollector, FamilySymbol, BuiltInParameter
+        from Autodesk.Revit.DB import FilteredElementCollector, FamilySymbol, BuiltInParameter  # type: ignore
         # Use .ToElements() to ensure proper IronPython object wrapping
         for sym in FilteredElementCollector(self._doc).OfClass(FamilySymbol).ToElements():
             try:
@@ -977,13 +979,6 @@ class BridgeSetupWindow(object):
 
     def _on_create_params(self, sender, args):
         """Handle 'Create / Update Global Parameters' click."""
-        if not hasattr(self, "_staged_config") or self._staged_config is None:
-            self._set_footer("Bridge Configuration has not been completed.")
-            self._param_items.Clear()
-            self._param_items.Add(StatusItem("FATAL ERROR", "Error", "Configure the bridge in Tab ② before creating the controlling Global Parameters."))
-            self._param_summary.Text = "Bridge Configuration missing."
-            return
-
         self._logger.info("Tab ③ button clicked - starting Global Parameter creation")
         self._param_items.Clear()
         
@@ -996,6 +991,10 @@ class BridgeSetupWindow(object):
         
         is_new_project = len(existing_gp_names) == 0
         
+        has_staged_config = hasattr(self, "_staged_config") and bool(self._staged_config)
+        has_mapped_inputs = len(self._mapped_gp_inputs) > 0
+        has_pending_updates = has_staged_config or has_mapped_inputs
+        
         # Check required family mappings ONLY if new project
         required_mappings = [
             "UB_Height", "Beam Centerline", "Beam Web", "Beam Flange", 
@@ -1005,18 +1004,62 @@ class BridgeSetupWindow(object):
         
         if is_new_project:
             missing_mappings = [m for m in required_mappings if m not in self._mapped_gp_inputs]
-            if missing_mappings:
-                self._set_footer("Parameter Mapping incomplete.")
-                self._param_items.Add(StatusItem("Action Required", "Incomplete", "Complete Parameter Mapping for Beam, Bearer, Joist, and Packer in Tab ① before creating initial Global Parameters."))
-                self._param_summary.Text = "Parameter Mapping incomplete: " + ", ".join(missing_mappings)
+            if missing_mappings or not has_staged_config:
+                self._set_footer("Initial setup incomplete.")
+                msgs = []
+                if not has_staged_config:
+                    msgs.append("Bridge Configuration must be completed in Tab ②.")
+                if missing_mappings:
+                    msgs.append("Complete Parameter Mapping for Beam, Bearer, Joist, and Packer in Tab ①.")
+                self._param_items.Add(StatusItem("Action Required", "Incomplete", " ".join(msgs)))
+                self._param_summary.Text = "Initial setup incomplete."
                 return
+
+        # Read-only pass: existing project, no pending updates
+        if not is_new_project and not has_pending_updates:
+            self._logger.info("No pending updates. Performing read-only validation.")
+            self._set_footer("Validating existing Global Parameters...")
+            
+            from core.global_param_manager import _find_global_param, _has_formula, _get_current_formula, _get_current_value_mm
+            
+            results = []
+            for defn in DEFINITIONS:
+                name = defn["name"]
+                gp = _find_global_param(self._doc, name)
+                if gp:
+                    val = _get_current_value_mm(gp)
+                    val_str = "{0:.1f} mm".format(val) if val is not None else "unknown"
+                    if defn["formula"]:
+                        f = _get_current_formula(gp)
+                        if f == defn["formula"]:
+                            results.append({"name": name, "status": "Formula OK", "detail": "Existing"})
+                        else:
+                            results.append({"name": name, "status": "Existing", "detail": "Formula mismatch: " + f})
+                    else:
+                        results.append({"name": name, "status": "Existing", "detail": val_str})
+                else:
+                    results.append({"name": name, "status": "Missing", "detail": "Parameter does not exist in document. Apply changes to recreate."})
+            
+            for r in results:
+                self._param_items.Add(StatusItem(r["name"], r["status"], r["detail"]))
+                
+            n_missing = sum(1 for r in results if r["status"] == "Missing")
+            if n_missing > 0:
+                self._param_summary.Text = "Missing {0} parameters. Apply changes to recreate them.".format(n_missing)
+                self._set_footer("Validation complete. Some parameters missing.")
+            else:
+                self._param_summary.Text = "All expected Global Parameters are present and valid."
+                self._set_footer("Global Parameters validated. No pending updates.")
+            
+            self._populate_tab2_prereqs()
+            return
 
         self._set_footer("Creating/Updating Global Parameters.")
 
         tg = None
         t = None
         try:
-            from Autodesk.Revit.DB import Transaction, TransactionGroup, TransactionStatus
+            from Autodesk.Revit.DB import Transaction, TransactionGroup, TransactionStatus  # type: ignore
             tg = TransactionGroup(self._doc, "Urbana: Create Global Parameters")
             if tg.Start() != TransactionStatus.Started:
                 raise Exception("Could not start TransactionGroup.")
@@ -1110,14 +1153,14 @@ class BridgeSetupWindow(object):
         except Exception as original_ex:
             if t is not None:
                 try:
-                    from Autodesk.Revit.DB import TransactionStatus
+                    from Autodesk.Revit.DB import TransactionStatus  # type: ignore
                     if t.GetStatus() == TransactionStatus.Started:
                         t.RollBack()
                 except Exception:
                     pass
             if tg is not None:
                 try:
-                    from Autodesk.Revit.DB import TransactionStatus
+                    from Autodesk.Revit.DB import TransactionStatus  # type: ignore
                     if tg.GetStatus() == TransactionStatus.Started:
                         tg.RollBack()
                 except Exception:
@@ -1183,7 +1226,7 @@ class BridgeSetupWindow(object):
 
         t = None
         try:
-            from Autodesk.Revit.DB import Transaction, TransactionStatus
+            from Autodesk.Revit.DB import Transaction, TransactionStatus  # type: ignore
             t = Transaction(self._doc, "Urbana: Create Reference Skeleton")
             if t.Start() != TransactionStatus.Started:
                 raise Exception("Could not start Transaction.")
@@ -1211,8 +1254,8 @@ class BridgeSetupWindow(object):
                 raise Exception("Could not commit Transaction.")
 
             # --- Post-creation: populate status list ---
-            from System.Collections.Generic import List
-            from Autodesk.Revit.DB import ElementId
+            from System.Collections.Generic import List  # type: ignore
+            from Autodesk.Revit.DB import ElementId  # type: ignore
 
             generated_ids  = List[ElementId]()
             planes_verified = 0
@@ -1276,7 +1319,7 @@ class BridgeSetupWindow(object):
         except Exception as original_ex:
             if t is not None:
                 try:
-                    from Autodesk.Revit.DB import TransactionStatus
+                    from Autodesk.Revit.DB import TransactionStatus  # type: ignore
                     if t.GetStatus() == TransactionStatus.Started:
                         t.RollBack()
                 except Exception:
@@ -1316,5 +1359,5 @@ class BridgeSetupWindow(object):
 
 def System_Windows_Visibility_Visible():
     """Return the WPF Visibility.Visible enum value."""
-    from System.Windows import Visibility
+    from System.Windows import Visibility  # type: ignore
     return Visibility.Visible
