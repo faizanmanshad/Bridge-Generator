@@ -262,6 +262,48 @@ def is_family_symbol_loaded(doc, family_name, type_name):
         pass
     return False
 
+def get_family_symbol(doc, family_name, type_name):
+    """Return the actual FamilySymbol element if loaded in the document.
+    
+    Args:
+        doc         (Document): Active Revit document.
+        family_name (str):      Exact family name, without .rfa extension.
+        type_name   (str):      Exact family type name.
+    """
+    try:
+        from Autodesk.Revit.DB import FilteredElementCollector, Family
+        for fam in FilteredElementCollector(doc).OfClass(Family).ToElements():
+            if fam.Name == family_name:
+                for symbol_id in fam.GetFamilySymbolIds():
+                    symbol = doc.GetElement(symbol_id)
+                    if symbol and symbol.Name == type_name:
+                        return symbol
+    except Exception as exc:
+        get_logger().error("Error fetching family symbol", family=family_name, type=type_name, exc=exc)
+    return None
+
+def enumerate_symbol_parameters(symbol):
+    """Extract length/double parameters from a FamilySymbol.
+    
+    Returns:
+        list of dicts: [{"name": str, "value": float}, ...] sorted by name.
+    """
+    params = []
+    if not symbol:
+        return params
+    try:
+        from Autodesk.Revit.DB import StorageType
+        for p in symbol.Parameters:
+            if p.HasValue and p.StorageType == StorageType.Double:
+                params.append({
+                    "name": p.Definition.Name,
+                    "value": p.AsDouble()
+                })
+        params.sort(key=lambda x: x["name"])
+    except Exception as exc:
+        get_logger().error("Error enumerating parameters", exc=exc)
+    return params
+
 def load_family_types(doc, family_name, rfa_path, selected_types):
     """Load specific types from a Revit family.
 

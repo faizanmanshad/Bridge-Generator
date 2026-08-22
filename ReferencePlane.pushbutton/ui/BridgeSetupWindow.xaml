@@ -229,118 +229,369 @@
                     Style="{StaticResource UrbanaTab}">
 
             <!-- ======================================================== -->
-            <!-- TAB 1: Global Parameters                                  -->
             <!-- ======================================================== -->
-            <TabItem Header="① Global Parameters"
+            <!-- TAB 1: Load Families                                      -->
+            <!-- ======================================================== -->
+            <TabItem Header="① Load Families"
                      Style="{StaticResource UrbanaTabItem}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="*"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <ScrollViewer Grid.Row="0"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled"
-                                  Padding="16,12,16,4">
-                        <StackPanel>
-                            <!-- Info card -->
-                            <Border Background="{StaticResource InfoBg}"
-                                    CornerRadius="6" Padding="12,10" Margin="0,0,0,10">
-                                <TextBlock TextWrapping="Wrap" FontSize="11"
-                                           Foreground="{StaticResource NavyPrimary}">
-                                    Creates or validates all <Bold>25 Global Parameters</Bold>
-                                    (Construction · Dimensions · Other) with exact names,
-                                    values, and formulas. Safe to re-run — no duplicates created.
-                                </TextBlock>
-                            </Border>
-
-                            <!-- Status card -->
-                            <Border Style="{StaticResource Card}">
+                <TabControl x:Name="LoadFamiliesSubTabs" Margin="8,8,8,0" Background="Transparent" BorderThickness="0">
+                    <TabItem Header="Load Families" FontSize="11" Foreground="{StaticResource TextPrimary}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+        
+                            <ScrollViewer Grid.Row="0"
+                                          VerticalScrollBarVisibility="Auto"
+                                          HorizontalScrollBarVisibility="Disabled"
+                                          Padding="8,8,8,4">
+                                <Border Background="{StaticResource BgCard}"
+                                        CornerRadius="0,0,6,6"
+                                        BorderBrush="{StaticResource BorderInput}"
+                                        BorderThickness="1,0,1,1"
+                                        Padding="14,10">
+                                    <StackPanel>
+                                        <TextBlock Text="Load Timber Deck Bridge families into the current document."
+                                                   FontSize="10.5"
+                                                   Foreground="{StaticResource TextSecondary}"
+                                                   TextWrapping="Wrap"
+                                                   Margin="0,0,0,10"/>
+        
+                                        <!-- Beam row -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" x:Name="CbBeam"
+                                                      IsChecked="True"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" Text="Beam"
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource TextPrimary}"
+                                                       FontWeight="Normal"/>
+                                            <TextBox Grid.Column="2" x:Name="BeamPathBox"
+                                                     Style="{StaticResource UrbanaTextBox}"
+                                                     Text="" FontSize="10"
+                                                     ToolTip="Path to Beam .rfa family file"/>
+                                            <Button Grid.Column="3" x:Name="BtnBrowseBeam"
+                                                    Content="Browse…"
+                                                    Style="{StaticResource BtnCancel}"
+                                                    Height="30" FontSize="10"
+                                                    Margin="6,0,0,0"/>
+                                        </Grid>
+                                        <Grid Margin="24,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
+                                            <ComboBox Grid.Column="1" x:Name="BeamTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
+                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
+                                            </ComboBox>
+                                        </Grid>
+        
+                                        <!-- Bearer row -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" x:Name="CbBearer"
+                                                      IsChecked="True"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" Text="Bearer"
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource TextPrimary}"
+                                                       FontWeight="Normal"/>
+                                            <TextBox Grid.Column="2" x:Name="BearerPathBox"
+                                                     Style="{StaticResource UrbanaTextBox}"
+                                                     Text="" FontSize="10"
+                                                     ToolTip="Path to Bearer .rfa family file"/>
+                                            <Button Grid.Column="3" x:Name="BtnBrowseBearer"
+                                                    Content="Browse…"
+                                                    Style="{StaticResource BtnCancel}"
+                                                    Height="30" FontSize="10"
+                                                    Margin="6,0,0,0"/>
+                                        </Grid>
+                                        <Grid Margin="24,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
+                                            <ComboBox Grid.Column="1" x:Name="BearerTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
+                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
+                                            </ComboBox>
+                                        </Grid>
+        
+                                        <!-- Joist row -->
+                                        <Grid Margin="0,0,0,6">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" x:Name="CbJoist"
+                                                      IsChecked="True"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" Text="Joist"
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource TextPrimary}"
+                                                       FontWeight="Normal"/>
+                                            <TextBox Grid.Column="2" x:Name="JoistPathBox"
+                                                     Style="{StaticResource UrbanaTextBox}"
+                                                     Text="" FontSize="10"
+                                                     ToolTip="Path to Joist .rfa family file"/>
+                                            <Button Grid.Column="3" x:Name="BtnBrowseJoist"
+                                                    Content="Browse…"
+                                                    Style="{StaticResource BtnCancel}"
+                                                    Height="30" FontSize="10"
+                                                    Margin="6,0,0,0"/>
+                                        </Grid>
+                                        <Grid Margin="24,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
+                                            <ComboBox Grid.Column="1" x:Name="JoistTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
+                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
+                                            </ComboBox>
+                                        </Grid>
+        
+                                        <!-- Packer row -->
+                                        <Grid Margin="0,0,0,12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="60"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <CheckBox Grid.Column="0" x:Name="CbPacker"
+                                                      IsChecked="True"
+                                                      VerticalAlignment="Center"
+                                                      Margin="0,0,8,0"/>
+                                            <TextBlock Grid.Column="1" Text="Packer"
+                                                       FontSize="11" VerticalAlignment="Center"
+                                                       Foreground="{StaticResource TextPrimary}"
+                                                       FontWeight="Normal"/>
+                                            <TextBox Grid.Column="2" x:Name="PackerPathBox"
+                                                     Style="{StaticResource UrbanaTextBox}"
+                                                     Text="" FontSize="10"
+                                                     ToolTip="Path to Packer .rfa family file"/>
+                                            <Button Grid.Column="3" x:Name="BtnBrowsePacker"
+                                                    Content="Browse…"
+                                                    Style="{StaticResource BtnCancel}"
+                                                    Height="30" FontSize="10"
+                                                    Margin="6,0,0,0"/>
+                                        </Grid>
+                                        <Grid Margin="24,0,0,10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="32"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
+                                            <ComboBox Grid.Column="1" x:Name="PackerTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
+                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
+                                            </ComboBox>
+                                        </Grid>
+        
+                                        <!-- Load selected families action -->
+                                        <Button x:Name="BtnLoadFamilies"
+                                                Content="▶   Load Selected Families"
+                                                Style="{StaticResource BtnRun}"
+                                                HorizontalAlignment="Left"
+                                                Width="220"
+                                                Margin="0,0,0,8"/>
+        
+                                        <!-- Family load status -->
+                                        <ItemsControl x:Name="FamilyStatusList">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                        <TextBlock Text="{Binding Icon}"
+                                                                   Width="20" FontSize="12"
+                                                                   Foreground="{Binding IconColor}"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Name}"
+                                                                   Width="65" FontSize="11"
+                                                                   Foreground="{StaticResource TextPrimary}"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Status}"
+                                                                   Width="115" FontSize="11"
+                                                                   Foreground="{Binding StatusColor}"
+                                                                   FontWeight="SemiBold"
+                                                                   VerticalAlignment="Center"/>
+                                                        <TextBlock Text="{Binding Detail}"
+                                                                   FontSize="10"
+                                                                   Foreground="{StaticResource TextMuted}"
+                                                                   TextTrimming="CharacterEllipsis"
+                                                                   VerticalAlignment="Center"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+                    
+                    <TabItem Header="Parameter Mapping" FontSize="11" Foreground="{StaticResource TextPrimary}">
+                        <Grid>
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="8,8,8,4">
                                 <StackPanel>
-                                    <TextBlock Text="Parameter Status"
-                                               Style="{StaticResource SectionLabel}"/>
-                                    <Border Background="{StaticResource BgInput}"
-                                            CornerRadius="4"
-                                            BorderBrush="{StaticResource BorderInput}"
-                                            BorderThickness="1"
-                                            MinHeight="260" Padding="2">
-                                        <ListView x:Name="ParamStatusList"
-                                                  BorderThickness="0"
-                                                  Background="Transparent"
-                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                                                  FontSize="11">
-                                            <ListView.View>
-                                                <GridView>
-                                                    <GridViewColumn Width="28">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <TextBlock Text="{Binding Icon}"
-                                                                           Style="{StaticResource StatusIcon}"
-                                                                           Foreground="{Binding IconColor}"/>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-                                                    <GridViewColumn Header="Parameter" Width="220">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <TextBlock Text="{Binding Name}"
-                                                                           FontSize="11"
-                                                                           Foreground="{StaticResource TextPrimary}"
-                                                                           TextTrimming="CharacterEllipsis"/>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-                                                    <GridViewColumn Header="Status" Width="110">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <TextBlock Text="{Binding Status}"
-                                                                           FontSize="11"
-                                                                           Foreground="{Binding StatusColor}"
-                                                                           FontWeight="SemiBold"/>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-                                                    <GridViewColumn Header="Detail" Width="180">
-                                                        <GridViewColumn.CellTemplate>
-                                                            <DataTemplate>
-                                                                <TextBlock Text="{Binding Detail}"
-                                                                           FontSize="10"
-                                                                           Foreground="{StaticResource TextMuted}"
-                                                                           TextTrimming="CharacterEllipsis"
-                                                                           ToolTip="{Binding Detail}"/>
-                                                            </DataTemplate>
-                                                        </GridViewColumn.CellTemplate>
-                                                    </GridViewColumn>
-                                                </GridView>
-                                            </ListView.View>
-                                        </ListView>
+                                    <TextBlock Text="Map internal family parameters to logical component dimensions. You must load a family first."
+                                               FontSize="10.5" Foreground="{StaticResource TextSecondary}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                    
+                                    <!-- Beam Mapping Panel -->
+                                    <Border x:Name="BeamMappingPanel" Background="{StaticResource BgCard}" CornerRadius="4" BorderBrush="{StaticResource BorderInput}" BorderThickness="1" Padding="14,10" Margin="0,0,0,10" IsEnabled="False" Opacity="0.5">
+                                        <StackPanel>
+                                            <TextBlock Text="Beam" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,2"/>
+                                            <TextBlock x:Name="BeamLoadedTypeLabel" Text="Loaded Type: (None)" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10"/>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Height" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="BeamHeightCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="BeamHeightValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Width" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="BeamWidthCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="BeamWidthValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Web Thickness" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="BeamWebCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="BeamWebValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Flange Thickness" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="BeamFlangeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="BeamFlangeValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                        </StackPanel>
                                     </Border>
-                                    <!-- Summary label -->
-                                    <TextBlock x:Name="ParamSummaryLabel"
-                                               Text="Click the button below to create or validate all 25 parameters."
-                                               FontSize="10.5"
-                                               Foreground="{StaticResource TextSecondary}"
-                                               Margin="0,8,0,0"
-                                               TextWrapping="Wrap"/>
+                                    
+                                    <!-- Bearer Mapping Panel -->
+                                    <Border x:Name="BearerMappingPanel" Background="{StaticResource BgCard}" CornerRadius="4" BorderBrush="{StaticResource BorderInput}" BorderThickness="1" Padding="14,10" Margin="0,0,0,10" IsEnabled="False" Opacity="0.5">
+                                        <StackPanel>
+                                            <TextBlock Text="Bearer" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,2"/>
+                                            <TextBlock x:Name="BearerLoadedTypeLabel" Text="Loaded Type: (None)" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10"/>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Width" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="BearerWidthCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="BearerWidthValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Joist Mapping Panel -->
+                                    <Border x:Name="JoistMappingPanel" Background="{StaticResource BgCard}" CornerRadius="4" BorderBrush="{StaticResource BorderInput}" BorderThickness="1" Padding="14,10" Margin="0,0,0,10" IsEnabled="False" Opacity="0.5">
+                                        <StackPanel>
+                                            <TextBlock Text="Joist" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,2"/>
+                                            <TextBlock x:Name="JoistLoadedTypeLabel" Text="Loaded Type: (None)" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10"/>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Height" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="JoistHeightCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="JoistHeightValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Packer Mapping Panel -->
+                                    <Border x:Name="PackerMappingPanel" Background="{StaticResource BgCard}" CornerRadius="4" BorderBrush="{StaticResource BorderInput}" BorderThickness="1" Padding="14,10" Margin="0,0,0,10" IsEnabled="False" Opacity="0.5">
+                                        <StackPanel>
+                                            <TextBlock Text="Packer" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextPrimary}" Margin="0,0,0,2"/>
+                                            <TextBlock x:Name="PackerLoadedTypeLabel" Text="Loaded Type: (None)" FontSize="10" Foreground="{StaticResource TextSecondary}" Margin="0,0,0,10"/>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Height" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="PackerHeightCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="PackerHeightValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                            
+                                            <Grid Margin="0,0,0,6">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="60"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0" Text="Width" FontSize="10" VerticalAlignment="Center"/>
+                                                <ComboBox Grid.Column="1" x:Name="PackerWidthCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10"/>
+                                                <TextBlock Grid.Column="2" x:Name="PackerWidthValue" Text="-" FontSize="10" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{StaticResource TextSecondary}"/>
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                    <!-- Apply Mapping Action -->
+                                    <Button x:Name="BtnApplyMapping"
+                                            Content="Apply Parameter Mapping"
+                                            Style="{StaticResource BtnRun}"
+                                            HorizontalAlignment="Left"
+                                            Width="220"
+                                            Margin="0,10,0,8"/>
+                                            
+                                    <TextBlock x:Name="MappingStatusText"
+                                               Text="Pending application..."
+                                               FontSize="11" Foreground="{StaticResource TextSecondary}"
+                                               Margin="0,0,0,10" TextWrapping="Wrap"/>
+                                               
                                 </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
-
-                    <!-- Tab 1 action button -->
-                    <Border Grid.Row="1"
-                            Background="{StaticResource BgCard}"
-                            BorderBrush="{StaticResource BorderInput}"
-                            BorderThickness="0,1,0,0"
-                            Padding="16,10">
-                        <Button x:Name="BtnCreateParams"
-                                Content="▶   Create / Update Global Parameters"
-                                Style="{StaticResource BtnRun}"/>
-                    </Border>
-                </Grid>
+                            </ScrollViewer>
+                        </Grid>
+                    </TabItem>
+                </TabControl>
             </TabItem>
-
                         <!-- TAB 2: Bridge Configuration                               -->
             <!-- ======================================================== -->
             <TabItem Header="② Bridge Configuration"
@@ -556,215 +807,7 @@
                                 </StackPanel>
                             </Border>
 
-                            <!-- Families expander (collapsed by default) -->
-                            <Expander x:Name="FamiliesExpander"
-                                      IsExpanded="False"
-                                      Margin="0,0,0,10"
-                                      Foreground="{StaticResource NavyPrimary}"
-                                      FontSize="11" FontWeight="SemiBold">
-                                <Expander.Header>
-                                    <TextBlock Text="Families"
-                                               FontSize="11" FontWeight="SemiBold"
-                                               Foreground="{StaticResource NavyPrimary}"/>
-                                </Expander.Header>
-                                <Border Background="{StaticResource BgCard}"
-                                        CornerRadius="0,0,6,6"
-                                        BorderBrush="{StaticResource BorderInput}"
-                                        BorderThickness="1,0,1,1"
-                                        Padding="14,10">
-                                    <StackPanel>
-                                        <TextBlock Text="Load Timber Deck Bridge families into the current document."
-                                                   FontSize="10.5"
-                                                   Foreground="{StaticResource TextSecondary}"
-                                                   TextWrapping="Wrap"
-                                                   Margin="0,0,0,10"/>
 
-                                        <!-- Beam row -->
-                                        <Grid Margin="0,0,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="60"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <CheckBox Grid.Column="0" x:Name="CbBeam"
-                                                      IsChecked="True"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" Text="Beam"
-                                                       FontSize="11" VerticalAlignment="Center"
-                                                       Foreground="{StaticResource TextPrimary}"
-                                                       FontWeight="Normal"/>
-                                            <TextBox Grid.Column="2" x:Name="BeamPathBox"
-                                                     Style="{StaticResource UrbanaTextBox}"
-                                                     Text="" FontSize="10"
-                                                     ToolTip="Path to Beam .rfa family file"/>
-                                            <Button Grid.Column="3" x:Name="BtnBrowseBeam"
-                                                    Content="Browse…"
-                                                    Style="{StaticResource BtnCancel}"
-                                                    Height="30" FontSize="10"
-                                                    Margin="6,0,0,0"/>
-                                        </Grid>
-                                        <Grid Margin="24,0,0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="32"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
-                                            <ComboBox Grid.Column="1" x:Name="BeamTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
-                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
-                                            </ComboBox>
-                                        </Grid>
-
-                                        <!-- Bearer row -->
-                                        <Grid Margin="0,0,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="60"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <CheckBox Grid.Column="0" x:Name="CbBearer"
-                                                      IsChecked="True"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" Text="Bearer"
-                                                       FontSize="11" VerticalAlignment="Center"
-                                                       Foreground="{StaticResource TextPrimary}"
-                                                       FontWeight="Normal"/>
-                                            <TextBox Grid.Column="2" x:Name="BearerPathBox"
-                                                     Style="{StaticResource UrbanaTextBox}"
-                                                     Text="" FontSize="10"
-                                                     ToolTip="Path to Bearer .rfa family file"/>
-                                            <Button Grid.Column="3" x:Name="BtnBrowseBearer"
-                                                    Content="Browse…"
-                                                    Style="{StaticResource BtnCancel}"
-                                                    Height="30" FontSize="10"
-                                                    Margin="6,0,0,0"/>
-                                        </Grid>
-                                        <Grid Margin="24,0,0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="32"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
-                                            <ComboBox Grid.Column="1" x:Name="BearerTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
-                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
-                                            </ComboBox>
-                                        </Grid>
-
-                                        <!-- Joist row -->
-                                        <Grid Margin="0,0,0,6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="60"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <CheckBox Grid.Column="0" x:Name="CbJoist"
-                                                      IsChecked="True"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" Text="Joist"
-                                                       FontSize="11" VerticalAlignment="Center"
-                                                       Foreground="{StaticResource TextPrimary}"
-                                                       FontWeight="Normal"/>
-                                            <TextBox Grid.Column="2" x:Name="JoistPathBox"
-                                                     Style="{StaticResource UrbanaTextBox}"
-                                                     Text="" FontSize="10"
-                                                     ToolTip="Path to Joist .rfa family file"/>
-                                            <Button Grid.Column="3" x:Name="BtnBrowseJoist"
-                                                    Content="Browse…"
-                                                    Style="{StaticResource BtnCancel}"
-                                                    Height="30" FontSize="10"
-                                                    Margin="6,0,0,0"/>
-                                        </Grid>
-                                        <Grid Margin="24,0,0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="32"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
-                                            <ComboBox Grid.Column="1" x:Name="JoistTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
-                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
-                                            </ComboBox>
-                                        </Grid>
-
-                                        <!-- Packer row -->
-                                        <Grid Margin="0,0,0,12">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto"/>
-                                                <ColumnDefinition Width="60"/>
-                                                <ColumnDefinition Width="*"/>
-                                                <ColumnDefinition Width="Auto"/>
-                                            </Grid.ColumnDefinitions>
-                                            <CheckBox Grid.Column="0" x:Name="CbPacker"
-                                                      IsChecked="True"
-                                                      VerticalAlignment="Center"
-                                                      Margin="0,0,8,0"/>
-                                            <TextBlock Grid.Column="1" Text="Packer"
-                                                       FontSize="11" VerticalAlignment="Center"
-                                                       Foreground="{StaticResource TextPrimary}"
-                                                       FontWeight="Normal"/>
-                                            <TextBox Grid.Column="2" x:Name="PackerPathBox"
-                                                     Style="{StaticResource UrbanaTextBox}"
-                                                     Text="" FontSize="10"
-                                                     ToolTip="Path to Packer .rfa family file"/>
-                                            <Button Grid.Column="3" x:Name="BtnBrowsePacker"
-                                                    Content="Browse…"
-                                                    Style="{StaticResource BtnCancel}"
-                                                    Height="30" FontSize="10"
-                                                    Margin="6,0,0,0"/>
-                                        </Grid>
-                                        <Grid Margin="24,0,0,10">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="32"/>
-                                                <ColumnDefinition Width="*"/>
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock Grid.Column="0" Text="Type" FontSize="10" VerticalAlignment="Center" Foreground="{StaticResource TextSecondary}"/>
-                                            <ComboBox Grid.Column="1" x:Name="PackerTypeCombo" Style="{StaticResource UrbanaCombo}" Height="24" FontSize="10" IsEnabled="False">
-                                                <ComboBoxItem Content="Select family first" IsSelected="True"/>
-                                            </ComboBox>
-                                        </Grid>
-
-                                        <!-- Load selected families action -->
-                                        <Button x:Name="BtnLoadFamilies"
-                                                Content="▶   Load Selected Families"
-                                                Style="{StaticResource BtnRun}"
-                                                HorizontalAlignment="Left"
-                                                Width="220"
-                                                Margin="0,0,0,8"/>
-
-                                        <!-- Family load status -->
-                                        <ItemsControl x:Name="FamilyStatusList">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                        <TextBlock Text="{Binding Icon}"
-                                                                   Width="20" FontSize="12"
-                                                                   Foreground="{Binding IconColor}"
-                                                                   VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding Name}"
-                                                                   Width="65" FontSize="11"
-                                                                   Foreground="{StaticResource TextPrimary}"
-                                                                   VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding Status}"
-                                                                   Width="115" FontSize="11"
-                                                                   Foreground="{Binding StatusColor}"
-                                                                   FontWeight="SemiBold"
-                                                                   VerticalAlignment="Center"/>
-                                                        <TextBlock Text="{Binding Detail}"
-                                                                   FontSize="10"
-                                                                   Foreground="{StaticResource TextMuted}"
-                                                                   TextTrimming="CharacterEllipsis"
-                                                                   VerticalAlignment="Center"/>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-                            </Expander>
 
                         </StackPanel>
                     </ScrollViewer>
@@ -783,9 +826,121 @@
             </TabItem>
 
             <!-- ======================================================== -->
-            <!-- TAB 3: Reference Planes                                   -->
+            <!-- TAB 3: Global Parameters                                  -->
             <!-- ======================================================== -->
-            <TabItem Header="③ Reference Planes"
+            <TabItem Header="③ Global Parameters"
+                     Style="{StaticResource UrbanaTabItem}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <ScrollViewer Grid.Row="0"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  Padding="16,12,16,4">
+                        <StackPanel>
+                            <!-- Info card -->
+                            <Border Background="{StaticResource InfoBg}"
+                                    CornerRadius="6" Padding="12,10" Margin="0,0,0,10">
+                                <TextBlock TextWrapping="Wrap" FontSize="11"
+                                           Foreground="{StaticResource NavyPrimary}">
+                                    Creates or validates all <Bold>25 Global Parameters</Bold>
+                                    (Construction · Dimensions · Other) with exact names,
+                                    values, and formulas. Safe to re-run — no duplicates created.
+                                </TextBlock>
+                            </Border>
+
+                            <!-- Status card -->
+                            <Border Style="{StaticResource Card}">
+                                <StackPanel>
+                                    <TextBlock Text="Parameter Status"
+                                               Style="{StaticResource SectionLabel}"/>
+                                    <Border Background="{StaticResource BgInput}"
+                                            CornerRadius="4"
+                                            BorderBrush="{StaticResource BorderInput}"
+                                            BorderThickness="1"
+                                            MinHeight="260" Padding="2">
+                                        <ListView x:Name="ParamStatusList"
+                                                  BorderThickness="0"
+                                                  Background="Transparent"
+                                                  ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                                  FontSize="11">
+                                            <ListView.View>
+                                                <GridView>
+                                                    <GridViewColumn Width="28">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Icon}"
+                                                                           Style="{StaticResource StatusIcon}"
+                                                                           Foreground="{Binding IconColor}"/>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                    <GridViewColumn Header="Parameter" Width="220">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Name}"
+                                                                           FontSize="11"
+                                                                           Foreground="{StaticResource TextPrimary}"
+                                                                           TextTrimming="CharacterEllipsis"/>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                    <GridViewColumn Header="Status" Width="110">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Status}"
+                                                                           FontSize="11"
+                                                                           Foreground="{Binding StatusColor}"
+                                                                           FontWeight="SemiBold"/>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                    <GridViewColumn Header="Detail" Width="180">
+                                                        <GridViewColumn.CellTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Detail}"
+                                                                           FontSize="10"
+                                                                           Foreground="{StaticResource TextMuted}"
+                                                                           TextTrimming="CharacterEllipsis"
+                                                                           ToolTip="{Binding Detail}"/>
+                                                            </DataTemplate>
+                                                        </GridViewColumn.CellTemplate>
+                                                    </GridViewColumn>
+                                                </GridView>
+                                            </ListView.View>
+                                        </ListView>
+                                    </Border>
+                                    <!-- Summary label -->
+                                    <TextBlock x:Name="ParamSummaryLabel"
+                                               Text="Click the button below to create or validate all 25 parameters."
+                                               FontSize="10.5"
+                                               Foreground="{StaticResource TextSecondary}"
+                                               Margin="0,8,0,0"
+                                               TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+
+                    <!-- Tab 1 action button -->
+                    <Border Grid.Row="1"
+                            Background="{StaticResource BgCard}"
+                            BorderBrush="{StaticResource BorderInput}"
+                            BorderThickness="0,1,0,0"
+                            Padding="16,10">
+                        <Button x:Name="BtnCreateParams"
+                                Content="▶   Create / Update Global Parameters"
+                                Style="{StaticResource BtnRun}"/>
+                    </Border>
+                </Grid>
+            </TabItem>
+
+            <!-- TAB 4: Reference Planes                                   -->
+            <!-- ======================================================== -->
+            <TabItem Header="④ Reference Planes"
                      Style="{StaticResource UrbanaTabItem}">
                 <Grid>
                     <Grid.RowDefinitions>
