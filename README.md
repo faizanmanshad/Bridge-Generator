@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-Bridge Generator is an in-progress Autodesk Revit automation project being developed for Urbana using pyRevit, IronPython/.NET, the Autodesk Revit API, and WPF/XAML.
+Bridge Generator is an in-progress Autodesk Revit automation project built with pyRevit, IronPython/.NET, the Autodesk Revit API, and WPF/XAML.
 
 The project is intentionally modular. Instead of attempting to generate an entire bridge through one large script, the workflow is being developed as a sequence of controlled subsystems that can be tested independently inside Revit.
 
@@ -53,7 +53,7 @@ Commit
 Move to the next subsystem
 ```
 
-The goal is to keep failures isolated and understandable instead of allowing multiple unrelated Revit API, UI, geometry, family, and parameter problems to become mixed together.
+The goal is to keep failures isolated and understandable instead of allowing unrelated Revit API, UI, geometry, family, and parameter problems to become mixed together.
 
 Important development principles include:
 
@@ -97,7 +97,7 @@ Actual Revit runtime testing
 
 ### Stage 3 — Project Documentation
 
-The project was documented through several reference files so that architecture and implementation decisions remain consistent across development.
+The project was documented through several reference files so architecture and implementation decisions remain consistent across development.
 
 The repository currently contains documentation such as:
 
@@ -133,30 +133,42 @@ Current development environment:
 
 ---
 
-## Repository / pyRevit Structure
+## pyRevit Structure
 
-The current plugin is organized using pyRevit extension conventions.
+pyRevit discovers extensions through a folder structure such as:
 
 ```text
-Urbana.extension/
-└── Urbana.tab/
-    └── BridgeGenerator.panel/
-        ├── README.md
-        └── ReferencePlane.pushbutton/
-            ├── script.py
-            ├── core/
-            ├── ui/
-            ├── PRD.md
-            ├── ARCHITECTURE.md
-            ├── COMPATIBILITY.md
-            ├── DESIGN.md
-            ├── MEMORY.md
-            ├── PHASES.md
-            ├── RULES.md
-            └── supporting resources
+<PyRevitExtensionRoot>/
+└── <AnyName>.extension/
+    └── <AnyName>.tab/
+        └── BridgeGenerator.panel/
+            ├── README.md
+            ├── docs/
+            │   └── screenshots/
+            └── ReferencePlane.pushbutton/
+                ├── script.py
+                ├── core/
+                ├── ui/
+                ├── PRD.md
+                ├── ARCHITECTURE.md
+                ├── COMPATIBILITY.md
+                ├── DESIGN.md
+                ├── MEMORY.md
+                ├── PHASES.md
+                ├── RULES.md
+                └── supporting resources
 ```
 
-The pushbutton is still physically named:
+The extension name and ribbon tab name are not hard requirements of this repository. A user may choose their own:
+
+```text
+<AnyName>.extension
+<AnyName>.tab
+```
+
+The important requirement is that the final pyRevit structure remains valid and that pyRevit is configured to scan the parent extension root.
+
+The current pushbutton is physically named:
 
 ```text
 ReferencePlane.pushbutton
@@ -190,7 +202,7 @@ Each stage has a separate responsibility.
 
 ## 1. Load Families
 
-The first main tab is responsible for loading the structural family types required for the current timber bridge setup.
+The first main tab is responsible for loading structural family types required for the current timber bridge setup.
 
 Current components:
 
@@ -217,7 +229,7 @@ Selected Family Type is loaded into the active Revit document
 
 The plugin intentionally loads the selected family/type rather than blindly loading unnecessary content.
 
-Each component is handled independently. This is important because a user may later replace only one component, such as the Beam, while preserving the existing Bearer, Joist, and Packer.
+Each component is handled independently. This allows a user to replace only one component later—for example, a Beam—while preserving the existing Bearer, Joist, and Packer.
 
 ---
 
@@ -227,7 +239,7 @@ Each component is handled independently. This is important because a user may la
 
 It is dependent on successful family loading.
 
-Once a component has been successfully loaded into the active Revit document, that component becomes available for mapping. The plugin then works from the **actual FamilySymbol loaded in the host Revit document**, rather than keeping temporary external `.rfa` family objects as the long-term source of truth.
+Once a component has been successfully loaded into the active Revit document, that component becomes available for mapping. The plugin then works from the **actual FamilySymbol loaded in the host Revit document**, rather than relying on temporary external `.rfa` family objects as the long-term source of truth.
 
 The purpose of mapping is to allow the user to select the real family parameter that corresponds to a logical bridge dimension.
 
@@ -394,7 +406,7 @@ Horizontal_Joist_Width
 
 ### Persistent Revit State vs Temporary Session State
 
-An important architectural change has been implemented:
+An important architectural rule is:
 
 ```text
 Revit document
@@ -420,7 +432,7 @@ and clicks:
 Create / Update Global Parameters
 ```
 
-the plugin should inspect the existing Revit Global Parameters first.
+the plugin inspects the existing Revit Global Parameters first.
 
 If nothing new has been staged:
 
@@ -555,36 +567,32 @@ This should be treated as the current foundation for later bridge-generation sys
 
 # Screenshots / Visual Workflow
 
-Runtime screenshots have been added to the plugin repository so future users and developers can see how the Bridge Setup interface works inside Autodesk Revit.
-
-They demonstrate areas such as:
-
-- Load Families
-- Parameter Mapping
-- Bridge Configuration
-- Global Parameters
-- Reference Planes
-- Runtime status / validation states
-
-**Screenshot folder:**
+Runtime screenshots are included in the repository under:
 
 ```text
-<ADD_ACTUAL_SCREENSHOT_FOLDER_PATH_HERE>
+docs/screenshots/
 ```
 
-> Replace the placeholder above with the final screenshot folder path inside the plugin repository once confirmed.
+These screenshots show the current Bridge Setup workflow and are intended to help users and developers understand how the plugin behaves inside Autodesk Revit.
 
-When adding screenshots to GitHub, relative repository paths are preferred so the documentation continues to work when the repository is cloned to another computer.
+They cover:
 
-Example Markdown once filenames are known:
+- Urbana / Bridge Generator ribbon access
+- Load Families
+- Successfully loaded families
+- Parameter Mapping
+- Successfully mapped parameters
+- Bridge Configuration
+- Global Parameter creation
+- Reference Plane creation
+- Reference Planes in the project view
+- Imported families in the Revit project
 
-```markdown
-![Load Families](relative/path/to/screenshots/load-families.png)
-![Parameter Mapping](relative/path/to/screenshots/parameter-mapping.png)
-![Bridge Configuration](relative/path/to/screenshots/bridge-configuration.png)
-![Global Parameters](relative/path/to/screenshots/global-parameters.png)
-![Reference Planes](relative/path/to/screenshots/reference-planes.png)
-```
+Browse them here:
+
+[Open the screenshot folder](docs/screenshots/)
+
+Because the screenshots are stored using a repository-relative path, they remain portable when the repository is cloned to another computer.
 
 ---
 
@@ -592,108 +600,192 @@ Example Markdown once filenames are known:
 
 ## Prerequisites
 
-The current plugin is being developed/tested with:
+Before installing the plugin, ensure that the following are available:
 
 - Autodesk Revit 2022 and/or Autodesk Revit 2024.3
-- pyRevit 6.4.0
-- A Windows environment capable of running the relevant Autodesk Revit version
-- Access to the required Urbana / Revit family libraries
+- pyRevit 6.4.0 or a compatible pyRevit installation
+- Windows
+- Git, if cloning the repository
+- Access to the Revit family `.rfa` files required for the bridge workflow
 
-Because the project is still under development, users should test the plugin in a controlled Revit project before using it on production work.
+> Family libraries may be stored anywhere on the user's computer or network. The plugin does not require the user to reproduce any developer-specific family-library path.
+
+Because the project is still under development, test the plugin in a controlled Revit project before using it on production work.
 
 ---
 
-## Installation Option 1 — Clone the Repository
+## Recommended pyRevit Installation Layout
 
-Clone the repository:
+The repository should sit inside a valid pyRevit extension/tab structure.
+
+A generic example is:
+
+```text
+<PyRevitExtensionRoot>/
+└── <YourExtensionName>.extension/
+    └── <YourTabName>.tab/
+        └── BridgeGenerator.panel/
+            ├── README.md
+            ├── docs/
+            └── ReferencePlane.pushbutton/
+```
+
+The user may choose any valid names for:
+
+```text
+<YourExtensionName>.extension
+<YourTabName>.tab
+```
+
+The important part is that pyRevit is configured to scan:
+
+```text
+<PyRevitExtensionRoot>
+```
+
+as an extension directory.
+
+---
+
+## Installation by Cloning the Repository
+
+### 1. Create a pyRevit extension root
+
+Choose any convenient folder on the computer.
+
+Example conceptually:
+
+```text
+<PyRevitExtensionRoot>/
+```
+
+Do not use a developer-specific path from this documentation; choose a location appropriate for the user's environment.
+
+### 2. Create the pyRevit extension and tab folders
+
+Inside the chosen extension root, create:
+
+```text
+<YourExtensionName>.extension/
+└── <YourTabName>.tab/
+```
+
+For example, the names may be company-specific or project-specific.
+
+### 3. Clone the repository into the tab structure
+
+Clone the repository so the resulting project forms the Bridge Generator panel inside the selected tab.
+
+Conceptually:
+
+```text
+<PyRevitExtensionRoot>/
+└── <YourExtensionName>.extension/
+    └── <YourTabName>.tab/
+        └── BridgeGenerator.panel/
+```
+
+Repository:
+
+```text
+git@github.com:faizanmanshad/Bridge-Generator.git
+```
+
+If the repository is cloned directly into the tab folder, make sure the cloned folder is ultimately named:
+
+```text
+BridgeGenerator.panel
+```
+
+or rename the cloned repository folder to that pyRevit panel name after cloning.
+
+Example:
 
 ```powershell
-git clone git@github.com:faizanmanshad/Bridge-Generator.git
+cd "<path-to-your-tab-folder>"
+git clone git@github.com:faizanmanshad/Bridge-Generator.git BridgeGenerator.panel
 ```
 
-Place or clone the extension into a directory that pyRevit is configured to use as an extension root.
-
-The expected structure must ultimately contain:
+This produces:
 
 ```text
-Urbana.extension/
-└── Urbana.tab/
-    └── BridgeGenerator.panel/
-        └── ReferencePlane.pushbutton/
+<YourTabName>.tab/
+└── BridgeGenerator.panel/
 ```
 
-Then reload pyRevit or restart Autodesk Revit.
+### 4. Add the extension root to pyRevit
 
----
-
-## Installation Option 2 — Copy the Extension Manually
-
-Copy:
+Configure pyRevit to load extensions from:
 
 ```text
-Urbana.extension
+<PyRevitExtensionRoot>
 ```
 
-into one of the custom extension directories configured in pyRevit.
+The exact folder can be different for every user.
 
-Do not copy only `ReferencePlane.pushbutton`; keep the required pyRevit extension/tab/panel structure intact.
-
-After copying:
+The important point is that pyRevit must know the parent directory containing:
 
 ```text
-1. Open Autodesk Revit.
-2. Confirm pyRevit is loaded.
-3. Reload pyRevit or restart Revit.
-4. Open the Urbana ribbon tab.
-5. Locate the Bridge Generator panel.
-6. Launch the Bridge Setup pushbutton.
+<YourExtensionName>.extension
+```
+
+### 5. Reload pyRevit / Restart Revit
+
+After adding the extension path:
+
+```text
+1. Reload pyRevit, or restart Autodesk Revit.
+2. Open the custom ribbon tab created by <YourTabName>.tab.
+3. Find the Bridge Generator panel.
+4. Launch the Bridge Setup pushbutton.
 ```
 
 ---
 
-## Current Development Path
+## Installation Without Git
 
-The current development environment uses a structure similar to:
+The same structure can be created manually.
 
-```text
-D:\All Revit\19 Revit Plugins\RevitExtensions\
-Urbana.extension\
-Urbana.tab\
-BridgeGenerator.panel\
-ReferencePlane.pushbutton\
-```
-
-This is a development-machine path and should **not** be assumed to be the installation path for every user.
-
-The important requirement is that pyRevit knows the parent directory containing:
+Copy the repository contents into:
 
 ```text
-Urbana.extension
+<PyRevitExtensionRoot>/
+└── <YourExtensionName>.extension/
+    └── <YourTabName>.tab/
+        └── BridgeGenerator.panel/
 ```
+
+Then add `<PyRevitExtensionRoot>` to pyRevit's configured extension directories and reload pyRevit / Revit.
 
 ---
 
-## Family Library Paths
+## Family Library Location
 
-Current family-loading workflows browse Revit family libraries.
+The plugin allows the user to browse for Revit family files.
 
-Example development roots:
+Family libraries do **not** need to exist at a specific hard-coded path.
 
-### Revit 2022
+The user may keep `.rfa` families in:
+
+- Autodesk Revit content libraries
+- A company family library
+- A network location
+- A project-specific family folder
+- Any other accessible location
+
+The workflow is simply:
 
 ```text
-D:\REVIT 2022\Libraries
+Load Families
+    ↓
+Browse...
+    ↓
+select the required .rfa
+    ↓
+select the required Family Type
+    ↓
+Load Selected Families
 ```
-
-### Revit 2024 / 2024.3
-
-```text
-D:\REVIT 2024\Libraries
-```
-
-These are current project/development paths and may differ on another computer.
-
-If the required family library exists elsewhere, browse to the appropriate `.rfa` manually through the Load Families interface.
 
 ---
 
@@ -817,6 +909,7 @@ Additional project documentation:
 - [Project Memory](ReferencePlane.pushbutton/MEMORY.md)
 - [Phases & Test Plan](ReferencePlane.pushbutton/PHASES.md)
 - [Development Rules](ReferencePlane.pushbutton/RULES.md)
+- [Runtime Screenshots](docs/screenshots/)
 
 ---
 
@@ -842,16 +935,16 @@ The separate family-loader and Parameter Mapping work was developed on:
 feature/Seperate-Family-Loader-Tab
 ```
 
-This branch was intentionally created so the previous `main` baseline remained recoverable if the loader/mapping experiment failed.
+This feature branch was used to protect the stable baseline while the separate family-loading and Parameter Mapping architecture was being developed and tested.
 
-The feature has now established a sufficiently stable new Bridge Setup backbone to be merged back into `main` after the final documentation commit and normal verification.
+The resulting Bridge Setup backbone can be merged into `main` once runtime verification and documentation are complete.
 
 Conceptual workflow:
 
 ```text
 main
   │
-  └── feature/Seperate-Family-Loader-Tab
+  └── feature branch
           ↓
        develop
           ↓
@@ -859,71 +952,16 @@ main
           ↓
        stabilize
           ↓
-       commit
-          ↓
-       update documentation
+       document
           ↓
        merge into main
 ```
 
 ---
 
-# Merging the Current Feature Branch into Main
-
-Before merging, confirm the working tree is clean and the feature branch has been pushed.
-
-Current branch:
-
-```text
-feature/Seperate-Family-Loader-Tab
-```
-
-Recommended sequence after the README update is committed:
-
-```powershell
-git status
-git push origin feature/Seperate-Family-Loader-Tab
-
-git switch main
-git pull origin main
-
-git merge --no-ff feature/Seperate-Family-Loader-Tab
-
-git push origin main
-```
-
-If Git reports a merge conflict:
-
-```text
-1. Resolve the conflicting files manually.
-2. Verify the intended code is preserved.
-3. Stage the resolved files.
-4. Complete the merge commit.
-5. Runtime-test again if the conflict touched executable plugin code.
-6. Push main.
-```
-
-After the merge has been verified, the feature branch may be kept for history or deleted later.
-
-Optional local deletion:
-
-```powershell
-git branch -d feature/Seperate-Family-Loader-Tab
-```
-
-Optional remote deletion:
-
-```powershell
-git push origin --delete feature/Seperate-Family-Loader-Tab
-```
-
-Do not delete the feature branch until the merge into `main` has been confirmed and the merged plugin has been checked.
-
----
-
 # Planned Future Development
 
-The current Bridge Setup backbone is only the beginning of the full bridge generator.
+The current Bridge Setup backbone is only the beginning of the full Bridge Generator.
 
 Planned future systems include:
 
@@ -942,7 +980,7 @@ Planned future systems include:
 
 # Contributing / Development Note
 
-This project is currently project-specific and actively evolving.
+This project is actively evolving.
 
 When modifying it:
 
@@ -952,5 +990,6 @@ When modifying it:
 - Test inside the target Revit version.
 - Do not assume static-analysis success equals Revit runtime success.
 - Update documentation when architecture or parameter ownership changes.
+- Avoid introducing machine-specific paths into source-controlled documentation.
 
 The current Bridge Setup workflow should be treated as the baseline foundation for the next stages of bridge automation.
