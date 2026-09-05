@@ -32,7 +32,7 @@ from core.revit_compat import element_id_value
 # ---------------------------------------------------------------------------
 
 def is_available():
-    """Return True if Structural Connections category can be queried."""
+    """Return True if Structural Connections can be queried."""
     return True
 
 
@@ -59,6 +59,41 @@ class ConnectionTypeItem(object):
 
 
 # ---------------------------------------------------------------------------
+# Helper
+# ---------------------------------------------------------------------------
+
+def _get_safe_name(elem):
+    """Safely extract the display name of a connection type.
+    
+    Accessing .Name on StructuralConnectionHandlerType throws an exception
+    in some versions of Revit. We extract the name via parameters instead.
+    """
+    try:
+        from Autodesk.Revit.DB import BuiltInParameter
+        # Try SYMBOL_NAME_PARAM first (standard for ElementTypes)
+        p = elem.get_Parameter(BuiltInParameter.SYMBOL_NAME_PARAM)
+        if p and p.HasValue:
+            val = p.AsString()
+            if val:
+                return val
+                
+        # Try ALL_MODEL_TYPE_NAME
+        p = elem.get_Parameter(BuiltInParameter.ALL_MODEL_TYPE_NAME)
+        if p and p.HasValue:
+            val = p.AsString()
+            if val:
+                return val
+    except Exception:
+        pass
+
+    # Fallback to direct property access if parameter extraction fails
+    try:
+        return elem.Name
+    except Exception:
+        return "Unnamed Connection"
+
+
+# ---------------------------------------------------------------------------
 # Catalog retrieval
 # ---------------------------------------------------------------------------
 
@@ -66,8 +101,6 @@ def get_connection_types(doc):
     """Return a sorted list of ConnectionTypeItem objects from the document.
 
     Returns an empty list if no connection types are loaded in the current document.
-    Queries all ElementTypes of BuiltInCategory.OST_StructConnection to capture
-    both structural connection handlers and family symbols.
 
     Args:
         doc: Autodesk.Revit.DB.Document — the active project document.
@@ -75,15 +108,11 @@ def get_connection_types(doc):
     Returns:
         list[ConnectionTypeItem]  — may be empty.
     """
-    try:
-        from Autodesk.Revit.DB import BuiltInCategory
-        collector = (
-            FilteredElementCollector(doc)
-            .OfCategory(BuiltInCategory.OST_StructConnection)
-            .WhereElementIsElementType()
-        )
-        items = []
-        seen_ids = set()
+    from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory
+    items = []
+    seen_ids = set()
+
+    def _add_elements(collector):
         for elem in collector:
             try:
                 elem_id = elem.Id
@@ -91,20 +120,31 @@ def get_connection_types(doc):
                 if int_id in seen_ids:
                     continue
                 seen_ids.add(int_id)
-                name = getattr(elem, "Name", "Unnamed Connection")
-                # Exclude basic system default if it's named something meaningless,
-                # but typically we want to list all of them.
+                name = _get_safe_name(elem)
                 items.append(ConnectionTypeItem(name, elem_id))
             except Exception:
-                # Skip any element that can't be read
                 continue
 
-        # Sort alphabetically for predictable UI ordering
-        items.sort(key=lambda x: x.name.lower())
-        return items
-
+    # 1. Collect explicitly by StructuralConnectionHandlerType (133 items found in diag)
+    try:
+        from Autodesk.Revit.DB.Structure import StructuralConnectionHandlerType
+        _add_elements(FilteredElementCollector(doc).OfClass(StructuralConnectionHandlerType))
     except Exception:
-        return []
+        pass
+
+    # 2. Collect broadly by category OST_StructConnections (Note the 's')
+    try:
+        _add_elements(
+            FilteredElementCollector(doc)
+            .OfCategory(BuiltInCategory.OST_StructConnections)
+            .WhereElementIsElementType()
+        )
+    except Exception:
+        pass
+
+    # Sort alphabetically for predictable UI ordering
+    items.sort(key=lambda x: x.name.lower())
+    return items
 
 
 def find_by_id(connection_types, element_id):
