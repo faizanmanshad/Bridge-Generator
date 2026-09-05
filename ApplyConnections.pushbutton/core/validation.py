@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-validation.py — Pre-flight checks for Apply Connections.pushbutton.
+validation.py — Pre-flight checks for ApplyConnections.pushbutton.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 All validation functions return a (success, message) tuple:

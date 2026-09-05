@@ -2,7 +2,7 @@
 """
 joint_model.py — JointRecord data model.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 JointRecord is the shared handoff object between:

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-logging_utils.py — Structured logging for Apply Connections.pushbutton.
+logging_utils.py — Structured logging for ApplyConnections.pushbutton.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 Writes JSON-lines to:
@@ -48,7 +48,7 @@ def _today_log_path():
 # ---------------------------------------------------------------------------
 
 class ApplyConnectionsLogger(object):
-    """Structured JSON-lines logger for Apply Connections.pushbutton.
+    """Structured JSON-lines logger for ApplyConnections.pushbutton.
 
     Usage:
         logger = get_logger()

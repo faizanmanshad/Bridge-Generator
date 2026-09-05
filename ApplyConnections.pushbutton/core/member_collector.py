@@ -2,7 +2,7 @@
 """
 member_collector.py — Collect Structural Framing elements from the document.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 Provides an efficient collector for Structural Framing elements.

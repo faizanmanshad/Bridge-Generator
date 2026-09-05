@@ -2,7 +2,7 @@
 """
 connection_placer.py — Structural connection creation via the Revit API.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 Responsibilities:

@@ -3,7 +3,7 @@
 """
 ApplyConnectionsWindow.py — Code-behind for ApplyConnectionsWindow.xaml.
 
-Apply Connections.pushbutton / ui/
+ApplyConnections.pushbutton / ui/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 Window architecture:

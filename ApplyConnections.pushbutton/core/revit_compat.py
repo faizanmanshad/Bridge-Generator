@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-revit_compat.py — Compatibility helpers for Apply Connections.pushbutton.
+revit_compat.py — Compatibility helpers for ApplyConnections.pushbutton.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 One extension is shared between supported Revit versions.

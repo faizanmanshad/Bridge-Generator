@@ -2,7 +2,7 @@
 """
 joint_geometry.py — Pure geometry utilities for structural joint detection.
 
-Apply Connections.pushbutton / core/
+ApplyConnections.pushbutton / core/
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 All functions operate on Autodesk.Revit.DB.XYZ objects and plain Python numbers.

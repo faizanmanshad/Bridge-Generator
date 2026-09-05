@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-script.py — pyRevit entry point for Apply Connections.pushbutton.
+script.py — pyRevit entry point for ApplyConnections.pushbutton.
 
-Apply Connections.pushbutton /
+ApplyConnections.pushbutton /
 Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython 2.7
 
 Execution sequence:
@@ -77,7 +77,7 @@ try:
 
     revit_env_name = get_revit_version_name()
     logger.info(
-        "Apply Connections.pushbutton started",
+        "ApplyConnections.pushbutton started",
         run_id=run_id,
         document=doc.Title,
         revit_env=revit_env_name,
@@ -90,7 +90,7 @@ try:
     window = ApplyConnectionsWindow(uidoc, BUNDLE_DIR)
     window.show_dialog()
 
-    logger.info("Apply Connections.pushbutton session ended", run_id=run_id)
+    logger.info("ApplyConnections.pushbutton session ended", run_id=run_id)
 
 except SystemExit:
     # Clean guard exits — not an error
