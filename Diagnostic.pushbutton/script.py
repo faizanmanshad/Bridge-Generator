@@ -102,13 +102,41 @@ except Exception as e:
     output.print_md("- **Connection Catalog error**: {}".format(e))
 
 # --- [Beam-Beam Detector] ---
-output.print_md("\n### [Beam-Beam Detector]")
-# Non-destructive diagnostics for detector can just report if the modules exist and load.
-try:
-    from core.joint_detector import detect_beam_beam_joints
-    output.print_md("- **Joint detector module loaded**: YES")
-except Exception as e:
-    output.print_md("- **Joint detector module error**: {}".format(e))
+output.print_md("\n### [Beam-Beam Detector Analysis]")
+bb_diag_file = os.path.join(ac_dir, "scratch", "beam_beam_diagnostic.json")
+if os.path.exists(bb_diag_file):
+    try:
+        with open(bb_diag_file, 'r') as f:
+            bb_data = json.load(f)
+            
+        output.print_md("- **Reference Beam ElementId**: {}".format(bb_data.get("reference_beam_id")))
+        output.print_md("- **Target Beam TypeId**: {}".format(bb_data.get("target_type_id")))
+        output.print_md("- **Target Family Name**: {}".format(bb_data.get("target_family_name")))
+        output.print_md("- **Target Type Name**: {}".format(bb_data.get("target_type_name")))
+        output.print_md("- **Matching Structural Framing instance count**: {}".format(bb_data.get("matching_instance_count")))
+        
+        output.print_md("\n**Pair Analysis Details:**")
+        pairs = bb_data.get("pairs", [])
+        if not pairs:
+            output.print_md("- No pairs evaluated (less than 2 matching instances found).")
+        for p in pairs:
+            output.print_md("#### {}".format(p.get("pair_name")))
+            output.print_md("- Same TypeId: {}".format(p.get("same_type_id")))
+            
+            if "closest_endpoints" in p:
+                output.print_md("- Closest endpoints: {}".format(p.get("closest_endpoints")))
+                output.print_md("- Endpoint distance: {} mm".format(p.get("endpoint_distance_mm")))
+                output.print_md("- Collinear: {}".format(p.get("collinear")))
+                
+            output.print_md("- Valid Beam-Beam splice: {}".format(p.get("valid_splice")))
+            if "reason" in p:
+                output.print_md("- Reason: {}".format(p.get("reason")))
+            output.print_md("")
+            
+    except Exception as e:
+        output.print_md("- **Failed to read beam-beam diagnostic**: {}".format(e))
+else:
+    output.print_md("- **No recent Beam-Beam detector log recorded.**")
 
 # --- [Last Error] ---
 output.print_md("\n### [Last Error]")

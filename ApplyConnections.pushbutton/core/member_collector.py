@@ -29,13 +29,15 @@ from core.revit_compat import element_id_value
 # Public API
 # ---------------------------------------------------------------------------
 
-def collect_structural_framing(doc, exclude_ids=None):
+def collect_structural_framing(doc, exclude_ids=None, target_type_id=None):
     """Return a list of all Structural Framing elements in the document.
 
     Args:
-        doc:         Autodesk.Revit.DB.Document
-        exclude_ids: iterable of ElementId to exclude (e.g. the primary beam).
-                     Pass None or empty to exclude nothing.
+        doc:            Autodesk.Revit.DB.Document
+        exclude_ids:    iterable of ElementId to exclude (e.g. the primary beam).
+                        Pass None or empty to exclude nothing.
+        target_type_id: Autodesk.Revit.DB.ElementId to match. If provided,
+                        only elements with this exact TypeId are returned.
 
     Returns:
         list[Element] — may be empty.
@@ -58,6 +60,12 @@ def collect_structural_framing(doc, exclude_ids=None):
                 eid_int = element_id_value(elem.Id)
                 if eid_int in exclude_set:
                     continue
+
+                if target_type_id is not None:
+                    # IronPython 2.7 compatible type matching
+                    elem_type_id = elem.GetTypeId()
+                    if elem_type_id != target_type_id:
+                        continue
 
                 # Only include elements with a usable LocationCurve
                 loc = elem.Location

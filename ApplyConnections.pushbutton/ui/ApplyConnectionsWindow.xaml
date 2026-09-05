@@ -324,7 +324,7 @@
                                       Padding="14,12,14,8">
                             <StackPanel>
                                 <!-- Section intro -->
-                                <TextBlock Text="Main Beam-to-Beam Connection"
+                                <TextBlock Text="Target Beam Type-to-Beam Connection"
                                            Style="{StaticResource SectionLabel}"/>
                                 <TextBlock Text="Select a main beam and apply predefined structural connections at all detected beam-to-beam joints."
                                            FontSize="10.5" Foreground="{StaticResource TextSecondary}"
@@ -344,12 +344,12 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Main Beam Selection -->
+                                <!-- Target Beam Type Selection -->
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="Main Beam" Style="{StaticResource SectionLabel}"/>
+                                        <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
                                         <Button x:Name="BtnSelectBeam_Concrete"
-                                                Content="⊙  Select Main Beam"
+                                                Content="⊙  Select Reference Beam"
                                                 Style="{StaticResource BtnSelect}"
                                                 HorizontalAlignment="Left"
                                                 Width="200"
@@ -524,7 +524,7 @@
                                       HorizontalScrollBarVisibility="Disabled"
                                       Padding="14,12,14,8">
                             <StackPanel>
-                                <TextBlock Text="Main Beam-to-Beam Connection"
+                                <TextBlock Text="Target Beam Type-to-Beam Connection"
                                            Style="{StaticResource SectionLabel}"/>
                                 <TextBlock Text="Select a main beam and apply predefined structural connections at all detected beam-to-beam joints."
                                            FontSize="10.5" Foreground="{StaticResource TextSecondary}"
@@ -544,12 +544,12 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Main Beam Selection -->
+                                <!-- Target Beam Type Selection -->
                                 <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="Main Beam" Style="{StaticResource SectionLabel}"/>
+                                        <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
                                         <Button x:Name="BtnSelectBeam_Timber"
-                                                Content="⊙  Select Main Beam"
+                                                Content="⊙  Select Reference Beam"
                                                 Style="{StaticResource BtnSelect}"
                                                 HorizontalAlignment="Left"
                                                 Width="200"

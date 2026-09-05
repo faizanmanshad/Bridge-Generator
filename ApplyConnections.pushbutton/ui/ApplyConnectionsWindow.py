@@ -324,9 +324,16 @@ class ApplyConnectionsWindow(object):
         # --- Store and display ---
         self._selected_beam_id[bridge_type] = element.Id
         display = describe_element(element)
-        beam_label.Text = display
+        
+        try:
+            type_id_val = element.GetTypeId().IntegerValue
+        except Exception:
+            type_id_val = "Unknown"
 
-        self._set_result(bridge_type, "Main beam selected: " + display, neutral=True)
+        display_text = "{0}\nType ID: {1}".format(display, type_id_val)
+        beam_label.Text = display_text
+
+        self._set_result(bridge_type, "Reference beam selected: " + display, neutral=True)
         self._set_footer("Beam selected. Click 'Apply Beam-Beam Connections' to proceed.")
         self._logger.info(
             "Main beam selected",

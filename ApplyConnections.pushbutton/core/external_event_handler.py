@@ -104,8 +104,10 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
 
         # 2. Detect Joints
         joints = []
+        matching_count = 0
+        valid_splice_count = 0
         try:
-            joints = detect_beam_beam_joints(
+            joints, matching_count, valid_splice_count = detect_beam_beam_joints(
                 doc,
                 primary_elem,
                 self.bridge_type,
@@ -155,12 +157,12 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
         n_unavail  = sum(1 for r in results if r["status"] == RESULT_UNAVAIL)
 
         summary_lines = [
-            "Joints detected:     {0}".format(len(joints)),
+            "Matching beam instances: {0}".format(matching_count),
+            "Valid same-type splice joints: {0}".format(valid_splice_count),
             "Connections created: {0}".format(n_created),
             "Skipped (existing):  {0}".format(n_skipped),
+            "Failed:              {0}".format(n_failed),
         ]
-        if n_failed:
-            summary_lines.append("Failed:              {0}".format(n_failed))
         if n_unavail:
             summary_lines.append("API unavailable:     {0}".format(n_unavail))
 
