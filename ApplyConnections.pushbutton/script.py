@@ -33,17 +33,17 @@ if BUNDLE_DIR not in sys.path:
 # ---------------------------------------------------------------------------
 # Revit / pyRevit globals (injected by pyRevit runtime)
 # ---------------------------------------------------------------------------
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 clr.AddReference("RevitAPIUI")
 
-from Autodesk.Revit.UI import TaskDialog
+from Autodesk.Revit.UI import TaskDialog  # type: ignore
 
-from pyrevit import script as pyscript
+from pyrevit import script as pyscript  # type: ignore
 
-doc   = __revit__.ActiveUIDocument.Document if __revit__.ActiveUIDocument else None
-uidoc = __revit__.ActiveUIDocument
-uiapp = __revit__
+doc   = __revit__.ActiveUIDocument.Document if __revit__.ActiveUIDocument else None  # type: ignore
+uidoc = __revit__.ActiveUIDocument  # type: ignore
+uiapp = __revit__  # type: ignore
 
 # ---------------------------------------------------------------------------
 # Guard: require an open project document
@@ -87,7 +87,7 @@ try:
 
     from ui.ApplyConnectionsWindow import ApplyConnectionsWindow
     from core.external_event_handler import ApplyConnectionsExternalEventHandler
-    from Autodesk.Revit.UI import ExternalEvent
+    from Autodesk.Revit.UI import ExternalEvent  # type: ignore
 
     handler = ApplyConnectionsExternalEventHandler()
     ext_event = ExternalEvent.Create(handler)
