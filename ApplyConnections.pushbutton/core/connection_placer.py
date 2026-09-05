@@ -24,7 +24,7 @@ Both classes are present in Revit 2022 and Revit 2024.3.
 Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 
 from Autodesk.Revit.DB import FilteredElementCollector  # type: ignore

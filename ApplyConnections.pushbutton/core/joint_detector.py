@@ -20,7 +20,7 @@ Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 
 import os
 import json
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 
 from core.member_collector  import collect_structural_framing, get_location_curve

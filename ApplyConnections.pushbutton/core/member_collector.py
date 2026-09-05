@@ -12,7 +12,7 @@ solid-vs-solid geometry search is performed at this stage.
 Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 
 from Autodesk.Revit.DB import (          # type: ignore

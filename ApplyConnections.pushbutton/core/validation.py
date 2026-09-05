@@ -12,7 +12,7 @@ All validation functions return a (success, message) tuple:
 Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 
 from Autodesk.Revit.DB import (       # type: ignore

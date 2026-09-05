@@ -13,7 +13,7 @@ Provides a clean PickObject wrapper that:
 Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 clr.AddReference("RevitAPIUI")
 

@@ -19,7 +19,7 @@ build without steel connections), the catalog returns an empty list and
 Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 
 from Autodesk.Revit.DB import FilteredElementCollector  # type: ignore

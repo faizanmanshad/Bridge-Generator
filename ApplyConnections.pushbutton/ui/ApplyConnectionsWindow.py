@@ -37,7 +37,7 @@ Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
 import os
-import clr
+import clr  # type: ignore
 clr.AddReference("PresentationFramework")
 clr.AddReference("PresentationCore")
 clr.AddReference("WindowsBase")

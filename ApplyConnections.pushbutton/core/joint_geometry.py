@@ -18,7 +18,7 @@ Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
 
 import math
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 
 # ---------------------------------------------------------------------------

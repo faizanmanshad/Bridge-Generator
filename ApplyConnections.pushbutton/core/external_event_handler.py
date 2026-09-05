@@ -8,7 +8,7 @@ Urbana Bridge Generator — Revit 2022 / 2024.3  |  pyRevit 6.4.0  |  IronPython
 Decouples Revit document modification from the WPF modeless window thread.
 """
 
-import clr
+import clr  # type: ignore
 import os
 import json
 clr.AddReference("RevitAPI")
