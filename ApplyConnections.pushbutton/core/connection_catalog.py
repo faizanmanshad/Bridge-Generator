@@ -31,18 +31,9 @@ from core.revit_compat import element_id_value
 # Module-level availability flag (determined on first import)
 # ---------------------------------------------------------------------------
 
-_HANDLER_TYPE_CLASS = None   # Set to the class if available, None otherwise
-
-try:
-    from Autodesk.Revit.DB.Structure import StructuralConnectionHandlerType  # type: ignore
-    _HANDLER_TYPE_CLASS = StructuralConnectionHandlerType
-except (ImportError, Exception):
-    _HANDLER_TYPE_CLASS = None
-
-
 def is_available():
-    """Return True if StructuralConnectionHandlerType can be used."""
-    return _HANDLER_TYPE_CLASS is not None
+    """Return True if Structural Connections category can be queried."""
+    return True
 
 
 # ---------------------------------------------------------------------------
@@ -74,9 +65,9 @@ class ConnectionTypeItem(object):
 def get_connection_types(doc):
     """Return a sorted list of ConnectionTypeItem objects from the document.
 
-    Returns an empty list if:
-      - StructuralConnectionHandlerType is not available in this Revit build.
-      - No connection types are loaded in the current document.
+    Returns an empty list if no connection types are loaded in the current document.
+    Queries all ElementTypes of BuiltInCategory.OST_StructConnection to capture
+    both structural connection handlers and family symbols.
 
     Args:
         doc: Autodesk.Revit.DB.Document — the active project document.
@@ -84,19 +75,26 @@ def get_connection_types(doc):
     Returns:
         list[ConnectionTypeItem]  — may be empty.
     """
-    if not is_available():
-        return []
-
     try:
+        from Autodesk.Revit.DB import BuiltInCategory
         collector = (
             FilteredElementCollector(doc)
-            .OfClass(_HANDLER_TYPE_CLASS)
+            .OfCategory(BuiltInCategory.OST_StructConnection)
+            .WhereElementIsElementType()
         )
         items = []
+        seen_ids = set()
         for elem in collector:
             try:
-                name = elem.Name or "Unnamed Connection"
-                items.append(ConnectionTypeItem(name, elem.Id))
+                elem_id = elem.Id
+                int_id = element_id_value(elem_id)
+                if int_id in seen_ids:
+                    continue
+                seen_ids.add(int_id)
+                name = getattr(elem, "Name", "Unnamed Connection")
+                # Exclude basic system default if it's named something meaningless,
+                # but typically we want to list all of them.
+                items.append(ConnectionTypeItem(name, elem_id))
             except Exception:
                 # Skip any element that can't be read
                 continue
