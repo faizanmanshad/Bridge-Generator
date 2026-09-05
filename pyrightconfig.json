@@ -1,0 +1,11 @@
+{
+    "pythonVersion": "2.7",
+    "pythonPlatform": "Windows",
+    "typeCheckingMode": "off",
+    "reportMissingImports": false,
+    "reportMissingModuleSource": false,
+    "reportUndefinedVariable": false,
+    "ignore": [
+        "**/*.py"
+    ]
+}

@@ -1,15 +1,15 @@
 # -*- coding: utf-8 -*-
 import os
 import json
-import clr
+import clr  # type: ignore
 clr.AddReference("RevitAPI")
 clr.AddReference("RevitAPIUI")
-from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory
-from pyrevit import script
+from Autodesk.Revit.DB import FilteredElementCollector, BuiltInCategory  # type: ignore
+from pyrevit import script  # type: ignore
 
-doc = __revit__.ActiveUIDocument.Document
-uidoc = __revit__.ActiveUIDocument
-app = __revit__.Application
+doc   = __revit__.ActiveUIDocument.Document  # type: ignore
+uidoc = __revit__.ActiveUIDocument           # type: ignore
+app   = __revit__.Application                # type: ignore
 output = script.get_output()
 
 PANEL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -21,7 +21,7 @@ output.print_md("==================================")
 output.print_md("### [Environment]")
 output.print_md("- **Revit version**: {} {}".format(app.VersionName, app.VersionBuild))
 try:
-    from pyrevit import HOST_APP
+    from pyrevit import HOST_APP  # type: ignore
     output.print_md("- **pyRevit version**: {}".format(HOST_APP.pyrevit_version))
 except:
     output.print_md("- **pyRevit version**: Unknown")
@@ -78,7 +78,7 @@ try:
     import sys
     if ac_dir not in sys.path:
         sys.path.insert(0, ac_dir)
-    from core.external_event_handler import ApplyConnectionsExternalEventHandler
+    from core.external_event_handler import ApplyConnectionsExternalEventHandler  # type: ignore
     output.print_md("- **Apply Connections creates ExternalEvent**: YES")
     output.print_md("- **ExternalEvent handler class name**: ApplyConnectionsExternalEventHandler")
     output.print_md("- **Is connection application routed through ExternalEvent?**: YES")
@@ -90,7 +90,7 @@ except Exception as e:
 # --- [Connection Catalog] ---
 output.print_md("\n### [Connection Catalog]")
 try:
-    from core.connection_catalog import get_connection_types
+    from core.connection_catalog import get_connection_types  # type: ignore
     conn_types = get_connection_types(doc)
     output.print_md("- **Number of discovered Structural Connection types**: {}".format(len(conn_types)))
     # Print the first 5 as a sample

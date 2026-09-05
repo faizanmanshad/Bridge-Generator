@@ -1,0 +1,11 @@
+[tool.pyrefly]
+# This project runs under pyRevit / IronPython 2.7 inside Autodesk Revit.
+# Modules such as clr, Autodesk.Revit.*, pyrevit, and the __revit__ magic global
+# are injected by the pyRevit runtime and do not exist in the local Python 3 environment.
+# All lint errors for these modules are expected and safe to ignore.
+
+python_version = "2.7"
+
+[tool.pyrefly.errors]
+missing-import = false
+unknown-name = false
