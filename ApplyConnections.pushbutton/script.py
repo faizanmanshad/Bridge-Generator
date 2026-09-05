@@ -86,8 +86,13 @@ try:
     logger.info("Urbana Apply Connections runtime: {0}".format(revit_env_name))
 
     from ui.ApplyConnectionsWindow import ApplyConnectionsWindow
+    from core.external_event_handler import ApplyConnectionsExternalEventHandler
+    from Autodesk.Revit.UI import ExternalEvent
 
-    window = ApplyConnectionsWindow(uidoc, BUNDLE_DIR)
+    handler = ApplyConnectionsExternalEventHandler()
+    ext_event = ExternalEvent.Create(handler)
+
+    window = ApplyConnectionsWindow(uidoc, BUNDLE_DIR, handler=handler, ext_event=ext_event)
     window.show_dialog()
 
     logger.info("ApplyConnections.pushbutton session ended", run_id=run_id)

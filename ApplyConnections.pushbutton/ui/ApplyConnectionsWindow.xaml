@@ -309,7 +309,7 @@
             <!-- ======================================================== -->
             <!-- TAB: Concrete Deck                                        -->
             <!-- ======================================================== -->
-            <TabItem Header="🔷  Concrete Deck"
+            <TabItem Header="Concrete Deck"
                      Style="{StaticResource UrbanaTabItem}">
                 <TabControl x:Name="ConcreteConnectionTabs"
                             Margin="8,6,8,0"
@@ -510,7 +510,7 @@
             <!-- ======================================================== -->
             <!-- TAB: Timber Deck                                          -->
             <!-- ======================================================== -->
-            <TabItem Header="🪵  Timber Deck"
+            <TabItem Header="Timber Deck"
                      Style="{StaticResource UrbanaTabItem}">
                 <TabControl x:Name="TimberConnectionTabs"
                             Margin="8,6,8,0"

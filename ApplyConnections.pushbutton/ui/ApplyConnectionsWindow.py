@@ -59,15 +59,8 @@ from core.validation           import (
     validate_joints,
 )
 from core.selection            import pick_structural_framing, describe_element
-from core.joint_detector       import detect_beam_beam_joints
-from core.connection_placer    import (
-    apply_beam_beam_connections_batch,
-    is_placement_available,
-    RESULT_CREATED,
-    RESULT_SKIPPED,
-    RESULT_FAILED,
-    RESULT_UNAVAIL,
-)
+from core.selection            import pick_structural_framing, describe_element
+from core.external_event_handler import REQUEST_APPLY_BEAM_BEAM
 
 
 # ---------------------------------------------------------------------------
@@ -117,12 +110,17 @@ class ApplyConnectionsWindow(object):
         win.show_dialog()
     """
 
-    def __init__(self, uidoc, bundle_dir):
+    def __init__(self, uidoc, bundle_dir, handler=None, ext_event=None):
         self._uidoc      = uidoc
         self._doc        = uidoc.Document
         self._bundle_dir = bundle_dir
         self._logger     = get_logger()
         self._window     = None
+        self._handler    = handler
+        self._ext_event  = ext_event
+        
+        if self._handler:
+            self._handler.result_callback = self._on_event_completed
 
         # --- Per-bridge-type state ---
         # Selected main beam ElementId for each bridge type
@@ -370,110 +368,52 @@ class ApplyConnectionsWindow(object):
             self._set_footer(msg)
             return
 
-        # --- Step 3: Detect joints ---
+        # --- Step 3: Populate event request and raise ---
         self._set_result(bridge_type, "Detecting beam-to-beam joints...", neutral=True)
-        self._set_footer("Scanning for joints...")
+        self._set_footer("Scanning for joints and applying connections...")
         self._update_ui()
 
-        joints = []
-        try:
-            joints = detect_beam_beam_joints(
-                self._doc,
-                primary_elem,
-                bridge_type,
-                logger=self._logger,
-            )
-        except Exception as ex:
-            msg = "Joint detection failed: {0}".format(ex)
-            self._set_result(bridge_type, msg, error=True)
-            self._set_footer("Detection error.")
-            self._logger.error(msg, exc=ex)
-            return
-
-        # --- Step 4: Validate joints ---
-        ok, msg = validate_joints(joints)
-        if not ok:
-            self._set_result(bridge_type, msg, warning=True)
-            self._set_footer("No joints detected.")
-            return
-
-        self._set_footer(
-            "{0} joint(s) detected. Applying connections...".format(len(joints))
-        )
-        self._update_ui()
-
-        # --- Step 5: Apply connections in a Transaction ---
-        results = []
-        t = None
-        try:
-            t = Transaction(self._doc, "Urbana — Apply Beam-Beam Connections")
-            t.Start()
-
-            results = apply_beam_beam_connections_batch(
-                self._doc,
-                joints,
-                conn_type_id,
-                logger=self._logger,
-            )
-
-            t.Commit()
-
-        except Exception as original_ex:
-            # Roll back ONLY if the transaction was actually started
-            if t is not None:
-                try:
-                    if t.GetStatus() == TransactionStatus.Started:
-                        t.RollBack()
-                except Exception:
-                    pass  # Do not let cleanup hide the original error
-
-            msg = "Connection placement failed: {0}".format(original_ex)
-            self._set_result(bridge_type, msg, error=True)
-            self._set_footer("Transaction rolled back — no changes committed.")
-            self._logger.error(msg, exc=original_ex)
-            return
-
-        # --- Step 6: Report results ---
-        n_created  = sum(1 for r in results if r["status"] == RESULT_CREATED)
-        n_skipped  = sum(1 for r in results if r["status"] == RESULT_SKIPPED)
-        n_failed   = sum(1 for r in results if r["status"] == RESULT_FAILED)
-        n_unavail  = sum(1 for r in results if r["status"] == RESULT_UNAVAIL)
-
-        summary_lines = [
-            "Joints detected:     {0}".format(len(joints)),
-            "Connections created: {0}".format(n_created),
-            "Skipped (existing):  {0}".format(n_skipped),
-        ]
-        if n_failed:
-            summary_lines.append("Failed:              {0}".format(n_failed))
-        if n_unavail:
-            summary_lines.append("API unavailable:     {0}".format(n_unavail))
-
-        summary = "\n".join(summary_lines)
-
-        if n_failed > 0 or n_unavail > 0:
-            self._set_result(bridge_type, summary, warning=True)
-        elif n_created > 0:
-            self._set_result(bridge_type, summary, success=True)
+        if self._handler and self._ext_event:
+            self._handler.request_type = REQUEST_APPLY_BEAM_BEAM
+            self._handler.bridge_type = bridge_type
+            self._handler.connection_type_id = conn_type_id
+            self._handler.main_beam_id = beam_id
+            self._ext_event.Raise()
         else:
-            # All skipped — already connected
-            self._set_result(bridge_type, summary, neutral=True)
+            self._set_result(bridge_type, "Internal error: ExternalEvent not initialized.", error=True)
 
-        footer_msg = (
-            "Done — {0} created, {1} skipped, {2} failed.".format(
-                n_created, n_skipped, n_failed
-            )
-        )
-        self._set_footer(footer_msg)
+    def _on_event_completed(self, bridge_type, result_dict):
+        """Callback from ExternalEvent when it completes processing."""
+        # This callback comes from the Revit API thread but we must update WPF UI safely
+        try:
+            import System                                               # type: ignore
+            from System.Windows.Threading import Dispatcher             # type: ignore
+            
+            def update_action():
+                status = result_dict.get("status")
+                msg = result_dict.get("message", "")
+                footer = result_dict.get("footer", None)
+                
+                if status == "error":
+                    self._set_result(bridge_type, msg, error=True)
+                elif status == "warning":
+                    self._set_result(bridge_type, msg, warning=True)
+                elif status == "success":
+                    self._set_result(bridge_type, msg, success=True)
+                else:
+                    self._set_result(bridge_type, msg, neutral=True)
+                    
+                if footer:
+                    self._set_footer(footer)
+                else:
+                    if status == "error":
+                        self._set_footer("Operation failed.")
+                        
+                self._update_ui()
 
-        self._logger.info(
-            "Apply Beam-Beam complete",
-            bridge_type=bridge_type,
-            joints=len(joints),
-            created=n_created,
-            skipped=n_skipped,
-            failed=n_failed,
-        )
+            Dispatcher.CurrentDispatcher.Invoke(System.Action(update_action))
+        except Exception as ex:
+            self._logger.error("Failed to update UI from callback", exc=ex)
 
     # ------------------------------------------------------------------
     # UI helpers
