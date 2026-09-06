@@ -270,6 +270,75 @@
             <Setter Property="BorderBrush"    Value="{StaticResource BorderInput}"/>
             <Setter Property="BorderThickness" Value="1"/>
         </Style>
+
+        <!-- ====================================================== -->
+        <!-- Connection Direction toggle-switch style (shared)       -->
+        <!-- Unchecked = Default (left pill active, navy)            -->
+        <!-- Checked   = Reversed (right pill active, orange)        -->
+        <!-- ====================================================== -->
+        <Style x:Key="ConnDirToggle" TargetType="ToggleButton">
+            <Setter Property="Cursor"           Value="Hand"/>
+            <Setter Property="BorderThickness"  Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Track"
+                                Background="#D0DCF0"
+                                CornerRadius="11"
+                                Padding="2"
+                                Width="144" Height="24">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <!-- Default pill (left, active by default) -->
+                                <Border x:Name="DefaultPill"
+                                        Grid.Column="0"
+                                        Background="{StaticResource NavyPrimary}"
+                                        CornerRadius="9"
+                                        Margin="0,0,1,0">
+                                    <TextBlock x:Name="DefaultText"
+                                               Text="Default"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="White"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                                <!-- Reverse pill (right, inactive by default) -->
+                                <Border x:Name="ReversePill"
+                                        Grid.Column="1"
+                                        Background="Transparent"
+                                        CornerRadius="9"
+                                        Margin="1,0,0,0">
+                                    <TextBlock x:Name="ReverseText"
+                                               Text="Reverse"
+                                               FontSize="10" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextMuted}"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                </Border>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <!-- Reversed state: right pill becomes active (orange) -->
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="DefaultPill" Property="Background" Value="Transparent"/>
+                                <Setter TargetName="DefaultText" Property="Foreground" Value="{StaticResource TextMuted}"/>
+                                <Setter TargetName="ReversePill" Property="Background" Value="{StaticResource Warning}"/>
+                                <Setter TargetName="ReverseText" Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <!-- Disabled state -->
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Track" Property="Opacity" Value="0.45"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
     <!-- ================================================================ -->
@@ -386,13 +455,30 @@
                                                        TextWrapping="Wrap"/>
                                         </Border>
 
-                                        <!-- Apply button -->
-                                        <Button x:Name="BtnApplyBeamBeam_Concrete"
-                                                Content="▶   Apply Beam–Beam Connections"
-                                                Style="{StaticResource BtnRun}"
-                                                HorizontalAlignment="Left"
-                                                Width="260"
-                                                Margin="0,4,0,0"/>
+                                        <!-- Apply + Connection Direction row —— Beam-Beam Concrete -->
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    x:Name="BtnApplyBeamBeam_Concrete"
+                                                    Content="▶   Apply Beam–Beam Connections"
+                                                    Style="{StaticResource BtnRun}"
+                                                    Width="260"/>
+                                            <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Margin="16,0,0,0">
+                                                <TextBlock Text="Connection Direction"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <ToggleButton x:Name="DirectionToggle_Concrete"
+                                                              Style="{StaticResource ConnDirToggle}"
+                                                              ToolTip="Default: lower ElementId = Input 1.  Reverse: swaps Input 1 / Input 2."/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -414,6 +500,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -435,6 +536,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -456,6 +572,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -477,6 +608,21 @@
                                         <TextBlock Text="Connection automation for Bearing Pad and Chemset Bolts will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -498,6 +644,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -584,12 +745,30 @@
                                                        Foreground="{StaticResource TextSecondary}"
                                                        TextWrapping="Wrap"/>
                                         </Border>
-                                        <Button x:Name="BtnApplyBeamBeam_Timber"
-                                                Content="▶   Apply Beam–Beam Connections"
-                                                Style="{StaticResource BtnRun}"
-                                                HorizontalAlignment="Left"
-                                                Width="260"
-                                                Margin="0,4,0,0"/>
+                                        <!-- Apply + Connection Direction row —— Beam-Beam Timber -->
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    x:Name="BtnApplyBeamBeam_Timber"
+                                                    Content="▶   Apply Beam–Beam Connections"
+                                                    Style="{StaticResource BtnRun}"
+                                                    Width="260"/>
+                                            <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Margin="16,0,0,0">
+                                                <TextBlock Text="Connection Direction"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <ToggleButton x:Name="DirectionToggle_Timber"
+                                                              Style="{StaticResource ConnDirToggle}"
+                                                              ToolTip="Default: lower ElementId = Input 1.  Reverse: swaps Input 1 / Input 2."/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -611,6 +790,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -632,6 +826,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -653,6 +862,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -674,6 +898,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -695,6 +934,21 @@
                                         <TextBlock Text="Connection automation for Bearing Pad and Chemset Bolts will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -716,6 +970,21 @@
                                         <TextBlock Text="Connection automation for this component will be added in a later development stage."
                                                    FontSize="11" Foreground="{StaticResource TextMuted}"
                                                    TextWrapping="Wrap"/>
+                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
+                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
+                                            <TextBlock Text="Connection Direction"
+                                                       FontSize="10" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       Margin="0,0,0,5"/>
+                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
+                                                          HorizontalAlignment="Left"
+                                                          IsEnabled="False"/>
+                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
+                                                       FontSize="9.5"
+                                                       Foreground="{StaticResource TextMuted}"
+                                                       TextWrapping="Wrap"
+                                                       Margin="0,5,0,0"/>
+                                        </StackPanel>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

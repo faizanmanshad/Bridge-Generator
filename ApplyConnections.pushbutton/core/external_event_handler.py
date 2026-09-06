@@ -40,6 +40,7 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
         self.bridge_type = None
         self.connection_type_id = None
         self.main_beam_id = None
+        self.reverse_direction = False  # False = Default, True = Reversed
         
         self.logger = get_logger()
         # Callback to update the WPF window UI thread
@@ -135,6 +136,7 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                 doc,
                 joints,
                 self.connection_type_id,
+                reverse_direction=self.reverse_direction,
                 logger=self.logger,
             )
 
@@ -156,9 +158,11 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
         n_failed   = sum(1 for r in results if r["status"] == RESULT_FAILED)
         n_unavail  = sum(1 for r in results if r["status"] == RESULT_UNAVAIL)
 
+        direction_label = "Reversed" if self.reverse_direction else "Default"
         summary_lines = [
             "Matching beam instances: {0}".format(matching_count),
             "Valid same-type splice joints: {0}".format(valid_splice_count),
+            "Direction: {0}".format(direction_label),
             "Connections created: {0}".format(n_created),
             "Skipped (existing):  {0}".format(n_skipped),
             "Failed:              {0}".format(n_failed),

@@ -112,7 +112,8 @@ def check_existing_connection(doc, primary_id, secondary_id):
 # Connection placement
 # ---------------------------------------------------------------------------
 
-def apply_beam_beam_connection(doc, joint_record, connection_type_id, logger=None):
+def apply_beam_beam_connection(doc, joint_record, connection_type_id,
+                               reverse_direction=False, logger=None):
     """Create a structural connection for one detected joint.
 
     Pre-conditions (must be checked by caller before this function):
@@ -121,7 +122,9 @@ def apply_beam_beam_connection(doc, joint_record, connection_type_id, logger=Non
 
     This function:
       1. Checks for an existing duplicate connection.
-      2. Builds the member ID list [primary, secondary].
+      2. Determines Input 1 / Input 2 order based on reverse_direction:
+             Default  (False) : primary_id   = Input 1, secondary_id = Input 2
+             Reversed (True)  : secondary_id = Input 1, primary_id   = Input 2
       3. Calls StructuralConnectionHandler.Create().
       4. Returns a result dict.
 
@@ -129,6 +132,7 @@ def apply_beam_beam_connection(doc, joint_record, connection_type_id, logger=Non
         doc:                Autodesk.Revit.DB.Document
         joint_record:       JointRecord
         connection_type_id: ElementId of StructuralConnectionHandlerType
+        reverse_direction:  bool — if True, swap Input 1 / Input 2 order
         logger:             ApplyConnectionsLogger or None
 
     Returns:
@@ -194,14 +198,32 @@ def apply_beam_beam_connection(doc, joint_record, connection_type_id, logger=Non
         )
 
     # --- Build member ID list ---
-    # Convention: primary first, secondary second
+    # Convention: primary first, secondary second (Default)
+    # When reverse_direction=True, swap so secondary becomes Input 1.
     try:
         from System.Collections.Generic import List as NetList  # type: ignore
         from Autodesk.Revit.DB import ElementId               # type: ignore
 
+        if reverse_direction:
+            input_1_id = secondary_id
+            input_2_id = primary_id
+        else:
+            input_1_id = primary_id
+            input_2_id = secondary_id
+
         member_ids = NetList[ElementId]()
-        member_ids.Add(primary_id)
-        member_ids.Add(secondary_id)
+        member_ids.Add(input_1_id)
+        member_ids.Add(input_2_id)
+
+        if logger:
+            logger.debug(
+                "Member input order resolved",
+                direction="Reversed" if reverse_direction else "Default",
+                input_1_id=element_id_value(input_1_id),
+                input_2_id=element_id_value(input_2_id),
+                default_primary_id=element_id_value(primary_id),
+                default_secondary_id=element_id_value(secondary_id),
+            )
     except Exception as ex:
         result["message"] = "Failed to build member ID list: {0}".format(ex)
         if logger:
@@ -217,17 +239,21 @@ def apply_beam_beam_connection(doc, joint_record, connection_type_id, logger=Non
         result["status"]        = RESULT_CREATED
         result["connection_id"] = conn_int
         result["message"] = (
-            "Connection created between {0} (primary) and {1} (secondary). "
-            "Connection ID: {2}.".format(
-                element_id_value(primary_id),
-                element_id_value(secondary_id),
-                conn_int,
+            "Connection created [{direction}]: "
+            "Input1={input1}  Input2={input2}  ConnID={cid}.".format(
+                direction="Reversed" if reverse_direction else "Default",
+                input1=element_id_value(input_1_id),
+                input2=element_id_value(input_2_id),
+                cid=conn_int,
             )
         )
         if logger:
             logger.info(
                 "Connection created",
                 connection_id=conn_int,
+                direction="Reversed" if reverse_direction else "Default",
+                input_1_id=element_id_value(input_1_id),
+                input_2_id=element_id_value(input_2_id),
                 **joint_record.diagnostic_dict()
             )
 
@@ -249,7 +275,8 @@ def apply_beam_beam_connection(doc, joint_record, connection_type_id, logger=Non
 # Batch placement
 # ---------------------------------------------------------------------------
 
-def apply_beam_beam_connections_batch(doc, joints, connection_type_id, logger=None):
+def apply_beam_beam_connections_batch(doc, joints, connection_type_id,
+                                      reverse_direction=False, logger=None):
     """Apply connections for a list of JointRecords within a single transaction.
 
     IMPORTANT: The caller is responsible for the Transaction lifecycle.
@@ -259,6 +286,7 @@ def apply_beam_beam_connections_batch(doc, joints, connection_type_id, logger=No
         doc:                Autodesk.Revit.DB.Document
         joints:             list[JointRecord]
         connection_type_id: ElementId of StructuralConnectionHandlerType
+        reverse_direction:  bool — if True, swaps Input 1 / Input 2 for every joint
         logger:             ApplyConnectionsLogger or None
 
     Returns:
@@ -266,6 +294,10 @@ def apply_beam_beam_connections_batch(doc, joints, connection_type_id, logger=No
     """
     results = []
     for joint in joints:
-        result = apply_beam_beam_connection(doc, joint, connection_type_id, logger)
+        result = apply_beam_beam_connection(
+            doc, joint, connection_type_id,
+            reverse_direction=reverse_direction,
+            logger=logger,
+        )
         results.append(result)
     return results

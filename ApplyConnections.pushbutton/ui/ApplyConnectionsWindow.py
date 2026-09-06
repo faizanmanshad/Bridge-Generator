@@ -176,6 +176,10 @@ class ApplyConnectionsWindow(object):
         self._result_card_timber     = w.FindName("ResultCard_Timber")
         self._btn_apply_timber       = w.FindName("BtnApplyBeamBeam_Timber")
 
+        # --- Connection Direction toggles (ToggleButton: unchecked=Default, checked=Reversed) ---
+        self._dir_toggle_concrete    = w.FindName("DirectionToggle_Concrete")
+        self._dir_toggle_timber      = w.FindName("DirectionToggle_Timber")
+
         # --- Wire events ---
         self._btn_select_concrete.Click += lambda s, e: self._on_select_beam(BRIDGE_CONCRETE)
         self._btn_select_timber.Click   += lambda s, e: self._on_select_beam(BRIDGE_TIMBER)
@@ -381,10 +385,24 @@ class ApplyConnectionsWindow(object):
         self._update_ui()
 
         if self._handler and self._ext_event:
-            self._handler.request_type = REQUEST_APPLY_BEAM_BEAM
-            self._handler.bridge_type = bridge_type
+            # Read Connection Direction toggle state
+            if bridge_type == BRIDGE_CONCRETE:
+                dir_toggle = self._dir_toggle_concrete
+            else:
+                dir_toggle = self._dir_toggle_timber
+
+            is_reversed = False
+            try:
+                if dir_toggle is not None and dir_toggle.IsChecked:
+                    is_reversed = True
+            except Exception:
+                pass
+
+            self._handler.request_type      = REQUEST_APPLY_BEAM_BEAM
+            self._handler.bridge_type       = bridge_type
             self._handler.connection_type_id = conn_type_id
-            self._handler.main_beam_id = beam_id
+            self._handler.main_beam_id      = beam_id
+            self._handler.reverse_direction = is_reversed
             self._ext_event.Raise()
         else:
             self._set_result(bridge_type, "Internal error: ExternalEvent not initialized.", error=True)
