@@ -485,36 +485,132 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- Bearer–Beam (Concrete) — PLACEHOLDER -->
+                    <!-- Bearer–Beam (Concrete) — ACTIVE -->
                     <TabItem Header="Bearer–Beam" Style="{StaticResource SecondaryTabItem}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14,12,14,8">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Padding="14,12,14,8">
                             <StackPanel>
+                                <!-- Section intro -->
                                 <TextBlock Text="Bearer-to-Main-Beam Connection"
                                            Style="{StaticResource SectionLabel}"/>
-                                <Border Style="{StaticResource PlaceholderCard}">
+                                <TextBlock Text="Select a Reference Beam type and a Reference Bearer type. Connections are applied at every valid project-wide Bearer-to-Beam joint."
+                                           FontSize="10.5" Foreground="{StaticResource TextSecondary}"
+                                           TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                                <!-- Connection Type -->
+                                <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="⏳  Coming in a later stage"
-                                                   FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextSecondary}"
-                                                   Margin="0,0,0,6"/>
-                                        <TextBlock Text="Connection automation for this component will be added in a later development stage."
-                                                   FontSize="11" Foreground="{StaticResource TextMuted}"
-                                                   TextWrapping="Wrap"/>
-                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
-                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
-                                            <TextBlock Text="Connection Direction"
-                                                       FontSize="10" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondary}"
-                                                       Margin="0,0,0,5"/>
-                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
-                                                          HorizontalAlignment="Left"
-                                                          IsEnabled="False"/>
-                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
-                                                       FontSize="9.5"
-                                                       Foreground="{StaticResource TextMuted}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,5,0,0"/>
+                                        <TextBlock Text="Connection Type" Style="{StaticResource SectionLabel}"/>
+                                        <ComboBox x:Name="ConnectionTypeCombo_BB_Concrete"
+                                                  Style="{StaticResource UrbanaCombo}"
+                                                  Margin="0,0,0,0"/>
+                                        <TextBlock Text="Choose the structural connection definition to apply at each Bearer-Beam joint."
+                                                   FontSize="10" Foreground="{StaticResource TextMuted}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Target Beam & Bearer Selection (Side by Side) -->
+                                <Grid Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left Column: Target Beam Type -->
+                                    <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBBBeam_Concrete"
+                                                    Content="⊙  Select Reference Beam"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"/>
+                                            <Border x:Name="SelectedBBBeamCard_Concrete"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Beam"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBBBeamLabel_Concrete"
+                                                               Text="— no beam selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
+                                    </Border>
+
+                                    <!-- Right Column: Target Bearer Type -->
+                                    <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Bearer Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBBBearer_Concrete"
+                                                    Content="⊙  Select Reference Bearer"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"/>
+                                            <Border x:Name="SelectedBBBearerCard_Concrete"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Bearer"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBBBearerLabel_Concrete"
+                                                               Text="— no bearer selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Status / Result -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Result" Style="{StaticResource SectionLabel}"/>
+                                        <Border x:Name="ResultCard_BB_Concrete"
+                                                Style="{StaticResource StatusCard}">
+                                            <TextBlock x:Name="ResultText_BB_Concrete"
+                                                       Text="Ready. Select a connection type, a Reference Beam, and a Reference Bearer, then click Apply."
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       TextWrapping="Wrap"/>
+                                        </Border>
+
+                                        <!-- Apply + Connection Direction row -->
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    x:Name="BtnApplyBearerBeam_Concrete"
+                                                    Content="▶   Apply Bearer–Beam Connections"
+                                                    Style="{StaticResource BtnRun}"
+                                                    Width="270"/>
+                                            <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Margin="16,0,0,0">
+                                                <TextBlock Text="Connection Direction"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <ToggleButton x:Name="DirectionToggle_BB_Concrete"
+                                                              Style="{StaticResource ConnDirToggle}"
+                                                              ToolTip="Default: Beam = Input 1, Bearer = Input 2.  Reverse: swaps Input 1 / Input 2."/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -775,36 +871,132 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- Bearer–Beam (Timber) — PLACEHOLDER -->
+                    <!-- Bearer–Beam (Timber) — ACTIVE -->
                     <TabItem Header="Bearer–Beam" Style="{StaticResource SecondaryTabItem}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14,12,14,8">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollBarVisibility="Disabled"
+                                      Padding="14,12,14,8">
                             <StackPanel>
+                                <!-- Section intro -->
                                 <TextBlock Text="Bearer-to-Main-Beam Connection"
                                            Style="{StaticResource SectionLabel}"/>
-                                <Border Style="{StaticResource PlaceholderCard}">
+                                <TextBlock Text="Select a Reference Beam type and a Reference Bearer type. Connections are applied at every valid project-wide Bearer-to-Beam joint."
+                                           FontSize="10.5" Foreground="{StaticResource TextSecondary}"
+                                           TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                                <!-- Connection Type -->
+                                <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="⏳  Coming in a later stage"
-                                                   FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextSecondary}"
-                                                   Margin="0,0,0,6"/>
-                                        <TextBlock Text="Connection automation for this component will be added in a later development stage."
-                                                   FontSize="11" Foreground="{StaticResource TextMuted}"
-                                                   TextWrapping="Wrap"/>
-                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
-                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
-                                            <TextBlock Text="Connection Direction"
-                                                       FontSize="10" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondary}"
-                                                       Margin="0,0,0,5"/>
-                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
-                                                          HorizontalAlignment="Left"
-                                                          IsEnabled="False"/>
-                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
-                                                       FontSize="9.5"
-                                                       Foreground="{StaticResource TextMuted}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,5,0,0"/>
+                                        <TextBlock Text="Connection Type" Style="{StaticResource SectionLabel}"/>
+                                        <ComboBox x:Name="ConnectionTypeCombo_BB_Timber"
+                                                  Style="{StaticResource UrbanaCombo}"
+                                                  Margin="0,0,0,0"/>
+                                        <TextBlock Text="Choose the structural connection definition to apply at each Bearer-Beam joint."
+                                                   FontSize="10" Foreground="{StaticResource TextMuted}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Target Beam & Bearer Selection (Side by Side) -->
+                                <Grid Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left Column: Target Beam Type -->
+                                    <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBBBeam_Timber"
+                                                    Content="⊙  Select Reference Beam"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"/>
+                                            <Border x:Name="SelectedBBBeamCard_Timber"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Beam"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBBBeamLabel_Timber"
+                                                               Text="— no beam selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
+                                    </Border>
+
+                                    <!-- Right Column: Target Bearer Type -->
+                                    <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Bearer Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBBBearer_Timber"
+                                                    Content="⊙  Select Reference Bearer"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"/>
+                                            <Border x:Name="SelectedBBBearerCard_Timber"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Bearer"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBBBearerLabel_Timber"
+                                                               Text="— no bearer selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Status / Result -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Result" Style="{StaticResource SectionLabel}"/>
+                                        <Border x:Name="ResultCard_BB_Timber"
+                                                Style="{StaticResource StatusCard}">
+                                            <TextBlock x:Name="ResultText_BB_Timber"
+                                                       Text="Ready. Select a connection type, a Reference Beam, and a Reference Bearer, then click Apply."
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       TextWrapping="Wrap"/>
+                                        </Border>
+
+                                        <!-- Apply + Connection Direction row -->
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    x:Name="BtnApplyBearerBeam_Timber"
+                                                    Content="▶   Apply Bearer–Beam Connections"
+                                                    Style="{StaticResource BtnRun}"
+                                                    Width="270"/>
+                                            <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Margin="16,0,0,0">
+                                                <TextBlock Text="Connection Direction"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <ToggleButton x:Name="DirectionToggle_BB_Timber"
+                                                              Style="{StaticResource ConnDirToggle}"
+                                                              ToolTip="Default: Beam = Input 1, Bearer = Input 2.  Reverse: swaps Input 1 / Input 2."/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

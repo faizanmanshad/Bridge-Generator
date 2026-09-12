@@ -301,3 +301,189 @@ def apply_beam_beam_connections_batch(doc, joints, connection_type_id,
         )
         results.append(result)
     return results
+
+
+# ---------------------------------------------------------------------------
+# Bearer–Beam connection placement
+# ---------------------------------------------------------------------------
+
+def apply_bearer_beam_connection(doc, joint_record, connection_type_id,
+                                  reverse_direction=False, logger=None):
+    """Create a structural connection for one detected Bearer-Beam joint.
+
+    Pre-conditions (must be checked by caller before this function):
+      - A valid Transaction is already started.
+      - connection_type_id is a valid ElementId of a StructuralConnectionHandlerType.
+
+    Role convention encoded in joint_record:
+        primary_id   → Beam   (the supporting main beam)
+        secondary_id → Bearer (the supported cross-member)
+
+    Member input order:
+        Default  (reverse_direction=False): Beam   = Input 1, Bearer = Input 2
+        Reversed (reverse_direction=True):  Bearer = Input 1, Beam   = Input 2
+
+    This convention places the supporting member first in the Default case,
+    which matches the typical Revit structural connection input expectation
+    for a member-framing-onto-beam joint. If the real model shows the opposite
+    orientation is needed, toggle Reverse.
+
+    Args:
+        doc:                Autodesk.Revit.DB.Document
+        joint_record:       JointRecord (primary_id=Beam, secondary_id=Bearer)
+        connection_type_id: ElementId of StructuralConnectionHandlerType
+        reverse_direction:  bool — if True, swap Input 1 / Input 2
+        logger:             ApplyConnectionsLogger or None
+
+    Returns:
+        dict with keys:
+            'status':        str  — RESULT_* constant
+            'connection_id': int or None
+            'message':       str
+            'joint':         JointRecord
+    """
+    result = {
+        "status":        RESULT_FAILED,
+        "connection_id": None,
+        "message":       "",
+        "joint":         joint_record,
+    }
+
+    # --- API availability ---
+    if not is_placement_available():
+        result["status"]  = RESULT_UNAVAIL
+        result["message"] = (
+            "StructuralConnectionHandler is not available in this Revit installation. "
+            "Ensure the structural connections module is licensed and loaded."
+        )
+        if logger:
+            logger.error("StructuralConnectionHandler unavailable")
+        return result
+
+    beam_id   = joint_record.primary_id    # Beam   role
+    bearer_id = joint_record.secondary_id  # Bearer role
+
+    # --- Duplicate check ---
+    try:
+        already_exists = check_existing_connection(doc, beam_id, bearer_id)
+    except Exception as ex:
+        already_exists = False
+        if logger:
+            logger.warning("Bearer-Beam duplicate check failed; proceeding", error=str(ex))
+
+    if already_exists:
+        result["status"]  = RESULT_SKIPPED
+        result["message"] = (
+            "Connection already exists between Beam {0} and Bearer {1}. Skipped.".format(
+                element_id_value(beam_id),
+                element_id_value(bearer_id),
+            )
+        )
+        if logger:
+            logger.info(
+                "Duplicate Bearer-Beam connection detected — skipped",
+                **joint_record.diagnostic_dict()
+            )
+        return result
+
+    # --- Build member ID list ---
+    # Default:  Beam (primary)   → Input 1,  Bearer (secondary) → Input 2
+    # Reversed: Bearer (secondary) → Input 1,  Beam (primary)   → Input 2
+    try:
+        from System.Collections.Generic import List as NetList  # type: ignore
+        from Autodesk.Revit.DB import ElementId               # type: ignore
+
+        if reverse_direction:
+            input_1_id = bearer_id
+            input_2_id = beam_id
+        else:
+            input_1_id = beam_id
+            input_2_id = bearer_id
+
+        member_ids = NetList[ElementId]()
+        member_ids.Add(input_1_id)
+        member_ids.Add(input_2_id)
+
+        if logger:
+            logger.debug(
+                "Bearer-Beam member input order resolved",
+                direction="Reversed" if reverse_direction else "Default",
+                input_1_id=element_id_value(input_1_id),
+                input_2_id=element_id_value(input_2_id),
+                beam_id=element_id_value(beam_id),
+                bearer_id=element_id_value(bearer_id),
+            )
+    except Exception as ex:
+        result["message"] = "Failed to build member ID list: {0}".format(ex)
+        if logger:
+            logger.error(result["message"], exc=ex)
+        return result
+
+    # --- Create the connection ---
+    try:
+        new_conn = _HANDLER_CLASS.Create(doc, member_ids, connection_type_id)
+
+        conn_int = element_id_value(new_conn.Id) if new_conn is not None else None
+
+        result["status"]        = RESULT_CREATED
+        result["connection_id"] = conn_int
+        result["message"] = (
+            "Bearer-Beam connection created [{direction}]: "
+            "Input1={input1} Input2={input2} ConnID={cid}.".format(
+                direction="Reversed" if reverse_direction else "Default",
+                input1=element_id_value(input_1_id),
+                input2=element_id_value(input_2_id),
+                cid=conn_int,
+            )
+        )
+        if logger:
+            logger.info(
+                "Bearer-Beam connection created",
+                connection_id=conn_int,
+                direction="Reversed" if reverse_direction else "Default",
+                input_1_id=element_id_value(input_1_id),
+                input_2_id=element_id_value(input_2_id),
+                **joint_record.diagnostic_dict()
+            )
+
+    except Exception as ex:
+        result["message"] = (
+            "Failed to create Bearer-Beam connection between Beam {0} "
+            "and Bearer {1}: {2}".format(
+                element_id_value(beam_id),
+                element_id_value(bearer_id),
+                str(ex),
+            )
+        )
+        if logger:
+            logger.error(result["message"], exc=ex)
+
+    return result
+
+
+def apply_bearer_beam_connections_batch(doc, joints, connection_type_id,
+                                        reverse_direction=False, logger=None):
+    """Apply Bearer-Beam connections for a list of JointRecords.
+
+    IMPORTANT: The caller is responsible for the Transaction lifecycle.
+    This function must be called inside a started Transaction.
+
+    Args:
+        doc:                Autodesk.Revit.DB.Document
+        joints:             list[JointRecord]
+        connection_type_id: ElementId of StructuralConnectionHandlerType
+        reverse_direction:  bool — if True, swaps Beam/Bearer input order
+        logger:             ApplyConnectionsLogger or None
+
+    Returns:
+        list[dict]
+    """
+    results = []
+    for joint in joints:
+        result = apply_bearer_beam_connection(
+            doc, joint, connection_type_id,
+            reverse_direction=reverse_direction,
+            logger=logger,
+        )
+        results.append(result)
+    return results

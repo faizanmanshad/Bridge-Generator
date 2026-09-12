@@ -10,10 +10,12 @@ The framework dispatches to connection-type-specific rules.
 
 Currently implemented:
     Beam–Beam     — exact same TypeId, project-wide, valid end-to-end splice.
+    Bearer–Beam   — distinct TypeIds (beam + bearer), endpoint-to-segment
+                    proximity, with anti-parallel guard.
 
 Designed for extension:
-    Bearer–Beam, Post–Beam, Joist–Bearer, etc. can each add their rule
-    function without modifying the core detection loop.
+    Post–Beam, Joist–Bearer, etc. can each add their rule function without
+    modifying the core detection loop.
 
 Python compatibility: IronPython 2.7 — no f-strings, no dataclasses.
 """
@@ -28,6 +30,7 @@ from core.joint_geometry    import (
     get_start_end,
     curve_direction,
     distance_point_to_point,
+    distance_point_to_segment,
     is_parallel,
     DEFAULT_PROXIMITY_TOLERANCE,
     add,
@@ -160,6 +163,348 @@ def detect_beam_beam_joints(doc, primary_element, bridge_type, logger=None,
     joints.sort(key=lambda r: (r.primary_id.IntegerValue, r.secondary_id.IntegerValue))
 
     return joints, matching_count, valid_splice_count
+
+
+# ---------------------------------------------------------------------------
+# Public entry point — Bearer-to-Beam detection
+# ---------------------------------------------------------------------------
+
+def detect_bearer_beam_joints(doc,
+                               ref_beam_element,
+                               ref_bearer_element,
+                               bridge_type,
+                               logger=None,
+                               tolerance=DEFAULT_PROXIMITY_TOLERANCE):
+    """Detect valid Bearer-to-Beam joints project-wide.
+
+    Algorithm:
+        1. Extract beam TypeId from ref_beam_element.
+        2. Extract bearer TypeId from ref_bearer_element.
+        3. Validate they are distinct (role ambiguity guard).
+        4. Collect all Structural Framing instances matching beam TypeId.
+        5. Collect all Structural Framing instances matching bearer TypeId.
+        6. For every (beam, bearer) pair run _bearer_beam_rule().
+           Each bearer end is tested independently — one bearer can yield
+           joints at both endpoints.
+        7. Deduplicate by (beam_id, bearer_id) pair key.
+        8. Log results to diagnostic JSON.
+        9. Return (joints, beam_count, bearer_count, valid_joint_count).
+
+    Args:
+        doc:                Autodesk.Revit.DB.Document
+        ref_beam_element:   Element — reference beam (TypeId seed)
+        ref_bearer_element: Element — reference bearer (TypeId seed)
+        bridge_type:        str — "concrete" or "timber"
+        logger:             ApplyConnectionsLogger or None
+        tolerance:          float — proximity tolerance in Revit internal units
+
+    Returns:
+        (list[JointRecord], int, int, int)
+        = (joints, beam_count, bearer_count, valid_joint_count)
+    """
+    # --- Extract TypeIds ---
+    try:
+        beam_type_id = ref_beam_element.GetTypeId()
+    except Exception as ex:
+        if logger:
+            logger.error("Failed to get TypeId from reference beam", exc=ex)
+        return [], 0, 0, 0
+
+    try:
+        bearer_type_id = ref_bearer_element.GetTypeId()
+    except Exception as ex:
+        if logger:
+            logger.error("Failed to get TypeId from reference bearer", exc=ex)
+        return [], 0, 0, 0
+
+    # --- Role-ambiguity guard ---
+    if beam_type_id == bearer_type_id:
+        if logger:
+            logger.error(
+                "Bearer-Beam detection aborted: both references share the same TypeId. "
+                "Cannot distinguish beam from bearer roles.",
+                beam_type_id=str(beam_type_id),
+            )
+        return [], 0, 0, 0
+
+    if logger:
+        logger.debug(
+            "Starting Bearer-Beam detection",
+            beam_type_id=str(beam_type_id),
+            bearer_type_id=str(bearer_type_id),
+            tolerance=tolerance,
+            bridge_type=bridge_type,
+        )
+
+    # --- Collect populations ---
+    beams   = collect_structural_framing(doc, exclude_ids=None, target_type_id=beam_type_id)
+    bearers = collect_structural_framing(doc, exclude_ids=None, target_type_id=bearer_type_id)
+
+    beam_count   = len(beams)
+    bearer_count = len(bearers)
+
+    if logger:
+        logger.debug(
+            "Populations collected",
+            beam_count=beam_count,
+            bearer_count=bearer_count,
+        )
+
+    joints = []
+    diagnostic_logs = []
+    # Deduplicate by (beam_id, bearer_id) — each unique physical joint only once
+    seen_pairs = set()
+
+    for beam in beams:
+        beam_id_int = beam.Id.IntegerValue
+
+        loc_beam = get_location_curve(beam)
+        if loc_beam is None:
+            continue
+        beam_curve = loc_beam.Curve
+        beam_start, beam_end = get_start_end(beam_curve)
+        beam_dir = curve_direction(beam_start, beam_end)
+
+        for bearer in bearers:
+            bearer_id_int = bearer.Id.IntegerValue
+
+            # Stable pair key — (beam, bearer) are inherently different roles,
+            # so no need to sort; (beam_id, bearer_id) is the canonical key.
+            pair_key = (beam_id_int, bearer_id_int)
+            if pair_key in seen_pairs:
+                continue
+
+            loc_bearer = get_location_curve(bearer)
+            if loc_bearer is None:
+                log = {
+                    "pair_name": "Beam {0} / Bearer {1}".format(beam_id_int, bearer_id_int),
+                    "beam_id": beam_id_int,
+                    "bearer_id": bearer_id_int,
+                    "valid_joint": "NO",
+                    "reason": "Bearer missing LocationCurve.",
+                }
+                diagnostic_logs.append(log)
+                continue
+
+            bearer_curve = loc_bearer.Curve
+            bearer_start, bearer_end = get_start_end(bearer_curve)
+            bearer_dir = curve_direction(bearer_start, bearer_end)
+
+            # Run the bearer-beam rule — may produce 0, 1 or 2 joints
+            records, log_entries = _bearer_beam_rule(
+                beam, bearer,
+                beam_start, beam_end, beam_dir,
+                bearer_start, bearer_end, bearer_dir,
+                bridge_type, tolerance,
+            )
+
+            diagnostic_logs.extend(log_entries)
+
+            if records:
+                seen_pairs.add(pair_key)
+                joints.extend(records)
+                for rec in records:
+                    if logger:
+                        logger.debug(
+                            "Valid Bearer-Beam joint detected",
+                            **rec.diagnostic_dict()
+                        )
+
+    valid_joint_count = len(joints)
+
+    # --- Diagnostic JSON ---
+    try:
+        try:
+            beam_type_elem   = doc.GetElement(beam_type_id)
+            bearer_type_elem = doc.GetElement(bearer_type_id)
+            beam_type_name   = beam_type_elem.Name   if beam_type_elem   else "Unknown"
+            bearer_type_name = bearer_type_elem.Name if bearer_type_elem else "Unknown"
+        except Exception:
+            beam_type_name   = "Unknown"
+            bearer_type_name = "Unknown"
+
+        diag_data = {
+            "beam_type_id":       beam_type_id.IntegerValue,
+            "bearer_type_id":     bearer_type_id.IntegerValue,
+            "beam_type_name":     beam_type_name,
+            "bearer_type_name":   bearer_type_name,
+            "beam_instance_count":   beam_count,
+            "bearer_instance_count": bearer_count,
+            "valid_joint_count":     valid_joint_count,
+            "pairs": diagnostic_logs,
+        }
+
+        dump_path = os.path.join(
+            os.path.dirname(__file__), "..", "scratch", "bearer_beam_diagnostic.json"
+        )
+        scratch_dir = os.path.dirname(dump_path)
+        if not os.path.exists(scratch_dir):
+            os.makedirs(scratch_dir)
+
+        with open(dump_path, "w") as f:
+            json.dump(diag_data, f, indent=4)
+    except Exception as ex:
+        if logger:
+            logger.warning("Failed to write bearer-beam diagnostic log", exc=ex)
+
+    if logger:
+        logger.info(
+            "Bearer-Beam detection complete",
+            beam_count=beam_count,
+            bearer_count=bearer_count,
+            valid_joint_count=valid_joint_count,
+        )
+
+    # Sort for stable ordering: primary (beam) first, then secondary (bearer)
+    joints.sort(key=lambda r: (r.primary_id.IntegerValue, r.secondary_id.IntegerValue))
+
+    return joints, beam_count, bearer_count, valid_joint_count
+
+
+# ---------------------------------------------------------------------------
+# Bearer-to-Beam rule
+# ---------------------------------------------------------------------------
+
+def _bearer_beam_rule(beam, bearer,
+                       beam_start, beam_end, beam_dir,
+                       bearer_start, bearer_end, bearer_dir,
+                       bridge_type, tolerance):
+    """Determine whether a (beam, bearer) pair has valid Bearer-Beam joints.
+
+    Strategy:
+        1. Reject if bearer direction is approximately parallel to beam direction
+           (would mean the bearer runs alongside the beam, not framing into it).
+        2. Test both bearer endpoints against the full beam centerline segment
+           using distance_point_to_segment().
+        3. Each bearer endpoint that is within tolerance of the beam segment
+           is recorded as an independent joint.
+
+    Why distance_point_to_segment rather than point-to-point:
+        A bearer can sit at any point along the beam, not just at the beam
+        endpoints. The segment test correctly captures a bearer framing into
+        the interior of a beam.
+
+    Why NOT require the bearer end to be near the BEAM END:
+        Main beams are typically continuous; bearers frame into their span at
+        various positions — not necessarily at the beam ends.
+
+    Args:
+        beam, bearer:           Elements
+        beam_start, beam_end:   XYZ — beam segment endpoints
+        beam_dir:               XYZ — normalised beam direction
+        bearer_start, bearer_end: XYZ — bearer segment endpoints
+        bearer_dir:             XYZ — normalised bearer direction
+        bridge_type:            str
+        tolerance:              float — Revit internal units
+
+    Returns:
+        (list[JointRecord], list[dict])
+        — may return 0, 1, or 2 JointRecords (one per valid bearer end)
+    """
+    beam_id_int   = beam.Id.IntegerValue
+    bearer_id_int = bearer.Id.IntegerValue
+
+    records     = []
+    log_entries = []
+
+    # --- 1. Anti-parallel guard ---
+    # If bearer runs parallel/anti-parallel to beam, it is NOT framing into it.
+    if is_parallel(bearer_dir, beam_dir):
+        log_entries.append({
+            "pair_name":  "Beam {0} / Bearer {1}".format(beam_id_int, bearer_id_int),
+            "beam_id":    beam_id_int,
+            "bearer_id":  bearer_id_int,
+            "valid_joint": "NO",
+            "reason":     "Bearer runs parallel to beam (not a framing connection).",
+        })
+        return records, log_entries
+
+    # --- 2. Test bearer Start endpoint ---
+    dist_start = distance_point_to_segment(bearer_start, beam_start, beam_end)
+    dist_start_mm = dist_start * 304.8
+
+    if dist_start <= tolerance:
+        # Valid joint at bearer Start end
+        log_entries.append({
+            "pair_name":       "Beam {0} / Bearer {1}".format(beam_id_int, bearer_id_int),
+            "beam_id":         beam_id_int,
+            "bearer_id":       bearer_id_int,
+            "bearer_end_tested": "Start",
+            "dist_mm":         round(dist_start_mm, 2),
+            "valid_joint":     "YES",
+        })
+        record = JointRecord(
+            primary_id    = beam.Id,      # Beam = primary (Input 1 in Default)
+            secondary_id  = bearer.Id,    # Bearer = secondary (Input 2 in Default)
+            joint_xyz     = bearer_start,
+            primary_dir   = beam_dir,
+            secondary_dir = bearer_dir,
+            angle_deg     = _angle_between(beam_dir, bearer_dir),
+            connection_end = CONNECTION_END_START,
+            primary_t     = None,
+            bridge_type   = bridge_type,
+            proximity_dist = dist_start,
+        )
+        records.append(record)
+    else:
+        log_entries.append({
+            "pair_name":       "Beam {0} / Bearer {1}".format(beam_id_int, bearer_id_int),
+            "beam_id":         beam_id_int,
+            "bearer_id":       bearer_id_int,
+            "bearer_end_tested": "Start",
+            "dist_mm":         round(dist_start_mm, 2),
+            "valid_joint":     "NO",
+            "reason":          "Bearer Start too far from beam ({0:.1f} mm).".format(dist_start_mm),
+        })
+
+    # --- 3. Test bearer End endpoint ---
+    dist_end = distance_point_to_segment(bearer_end, beam_start, beam_end)
+    dist_end_mm = dist_end * 304.8
+
+    if dist_end <= tolerance:
+        # Valid joint at bearer End end
+        log_entries.append({
+            "pair_name":       "Beam {0} / Bearer {1}".format(beam_id_int, bearer_id_int),
+            "beam_id":         beam_id_int,
+            "bearer_id":       bearer_id_int,
+            "bearer_end_tested": "End",
+            "dist_mm":         round(dist_end_mm, 2),
+            "valid_joint":     "YES",
+        })
+        record = JointRecord(
+            primary_id    = beam.Id,
+            secondary_id  = bearer.Id,
+            joint_xyz     = bearer_end,
+            primary_dir   = beam_dir,
+            secondary_dir = bearer_dir,
+            angle_deg     = _angle_between(beam_dir, bearer_dir),
+            connection_end = CONNECTION_END_END,
+            primary_t     = None,
+            bridge_type   = bridge_type,
+            proximity_dist = dist_end,
+        )
+        records.append(record)
+    else:
+        log_entries.append({
+            "pair_name":       "Beam {0} / Bearer {1}".format(beam_id_int, bearer_id_int),
+            "beam_id":         beam_id_int,
+            "bearer_id":       bearer_id_int,
+            "bearer_end_tested": "End",
+            "dist_mm":         round(dist_end_mm, 2),
+            "valid_joint":     "NO",
+            "reason":          "Bearer End too far from beam ({0:.1f} mm).".format(dist_end_mm),
+        })
+
+    return records, log_entries
+
+
+def _angle_between(dir_a, dir_b):
+    """Return the angle in degrees between two direction vectors [0..90]."""
+    try:
+        from core.joint_geometry import angle_between_deg
+        return angle_between_deg(dir_a, dir_b)
+    except Exception:
+        return 0.0
 
 
 # ---------------------------------------------------------------------------

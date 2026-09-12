@@ -59,8 +59,10 @@ from core.validation           import (
     validate_joints,
 )
 from core.selection            import pick_structural_framing, describe_element
-from core.selection            import pick_structural_framing, describe_element
-from core.external_event_handler import REQUEST_APPLY_BEAM_BEAM
+from core.external_event_handler import (
+    REQUEST_APPLY_BEAM_BEAM,
+    REQUEST_APPLY_BEARER_BEAM,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -123,8 +125,19 @@ class ApplyConnectionsWindow(object):
             self._handler.result_callback = self._on_event_completed
 
         # --- Per-bridge-type state ---
-        # Selected main beam ElementId for each bridge type
+        # Selected main beam ElementId for Beam-Beam
         self._selected_beam_id = {
+            BRIDGE_CONCRETE: None,
+            BRIDGE_TIMBER:   None,
+        }
+
+        # Bearer-Beam: separate beam and bearer references per bridge type
+        # Keys use bridge_type string ("concrete" / "timber")
+        self._bb_beam_id = {
+            BRIDGE_CONCRETE: None,
+            BRIDGE_TIMBER:   None,
+        }
+        self._bb_bearer_id = {
             BRIDGE_CONCRETE: None,
             BRIDGE_TIMBER:   None,
         }
@@ -180,12 +193,43 @@ class ApplyConnectionsWindow(object):
         self._dir_toggle_concrete    = w.FindName("DirectionToggle_Concrete")
         self._dir_toggle_timber      = w.FindName("DirectionToggle_Timber")
 
+        # --- Bearer-Beam controls (Concrete) ---
+        self._bb_conn_combo_concrete   = w.FindName("ConnectionTypeCombo_BB_Concrete")
+        self._bb_btn_beam_concrete     = w.FindName("BtnSelectBBBeam_Concrete")
+        self._bb_beam_label_concrete   = w.FindName("SelectedBBBeamLabel_Concrete")
+        self._bb_btn_bearer_concrete   = w.FindName("BtnSelectBBBearer_Concrete")
+        self._bb_bearer_label_concrete = w.FindName("SelectedBBBearerLabel_Concrete")
+        self._bb_result_text_concrete  = w.FindName("ResultText_BB_Concrete")
+        self._bb_result_card_concrete  = w.FindName("ResultCard_BB_Concrete")
+        self._bb_btn_apply_concrete    = w.FindName("BtnApplyBearerBeam_Concrete")
+        self._bb_dir_toggle_concrete   = w.FindName("DirectionToggle_BB_Concrete")
+
+        # --- Bearer-Beam controls (Timber) ---
+        self._bb_conn_combo_timber     = w.FindName("ConnectionTypeCombo_BB_Timber")
+        self._bb_btn_beam_timber       = w.FindName("BtnSelectBBBeam_Timber")
+        self._bb_beam_label_timber     = w.FindName("SelectedBBBeamLabel_Timber")
+        self._bb_btn_bearer_timber     = w.FindName("BtnSelectBBBearer_Timber")
+        self._bb_bearer_label_timber   = w.FindName("SelectedBBBearerLabel_Timber")
+        self._bb_result_text_timber    = w.FindName("ResultText_BB_Timber")
+        self._bb_result_card_timber    = w.FindName("ResultCard_BB_Timber")
+        self._bb_btn_apply_timber      = w.FindName("BtnApplyBearerBeam_Timber")
+        self._bb_dir_toggle_timber     = w.FindName("DirectionToggle_BB_Timber")
+
         # --- Wire events ---
         self._btn_select_concrete.Click += lambda s, e: self._on_select_beam(BRIDGE_CONCRETE)
         self._btn_select_timber.Click   += lambda s, e: self._on_select_beam(BRIDGE_TIMBER)
 
         self._btn_apply_concrete.Click += lambda s, e: self._on_apply_beam_beam(BRIDGE_CONCRETE)
         self._btn_apply_timber.Click   += lambda s, e: self._on_apply_beam_beam(BRIDGE_TIMBER)
+
+        # Bearer-Beam events
+        self._bb_btn_beam_concrete.Click   += lambda s, e: self._on_select_bb_beam(BRIDGE_CONCRETE)
+        self._bb_btn_bearer_concrete.Click += lambda s, e: self._on_select_bb_bearer(BRIDGE_CONCRETE)
+        self._bb_btn_apply_concrete.Click  += lambda s, e: self._on_apply_bearer_beam(BRIDGE_CONCRETE)
+
+        self._bb_btn_beam_timber.Click   += lambda s, e: self._on_select_bb_beam(BRIDGE_TIMBER)
+        self._bb_btn_bearer_timber.Click += lambda s, e: self._on_select_bb_bearer(BRIDGE_TIMBER)
+        self._bb_btn_apply_timber.Click  += lambda s, e: self._on_apply_bearer_beam(BRIDGE_TIMBER)
 
         w.FindName("BtnClose").Click += lambda s, e: self._on_close(s, e)
 
@@ -199,24 +243,26 @@ class ApplyConnectionsWindow(object):
 
         if not catalog_available():
             hint = "(StructuralConnectionHandlerType not available in this Revit build)"
-            self._conn_combo_concrete.Items.Add(hint)
-            self._conn_combo_concrete.SelectedIndex = 0
-            self._conn_combo_concrete.IsEnabled = False
-            self._conn_combo_timber.Items.Add(hint)
-            self._conn_combo_timber.SelectedIndex = 0
-            self._conn_combo_timber.IsEnabled = False
+            for combo in [
+                self._conn_combo_concrete, self._conn_combo_timber,
+                self._bb_conn_combo_concrete, self._bb_conn_combo_timber,
+            ]:
+                combo.Items.Add(hint)
+                combo.SelectedIndex = 0
+                combo.IsEnabled = False
             self._set_footer("Steel Connection API not available. Connection dropdown disabled.")
             self._logger.warning("StructuralConnectionHandlerType unavailable")
             return
 
         if not self._connection_types:
             hint = "(No structural connection types found in this document)"
-            self._conn_combo_concrete.Items.Add(hint)
-            self._conn_combo_concrete.SelectedIndex = 0
-            self._conn_combo_concrete.IsEnabled = False
-            self._conn_combo_timber.Items.Add(hint)
-            self._conn_combo_timber.SelectedIndex = 0
-            self._conn_combo_timber.IsEnabled = False
+            for combo in [
+                self._conn_combo_concrete, self._conn_combo_timber,
+                self._bb_conn_combo_concrete, self._bb_conn_combo_timber,
+            ]:
+                combo.Items.Add(hint)
+                combo.SelectedIndex = 0
+                combo.IsEnabled = False
             self._set_footer(
                 "No structural connection types found. "
                 "Load connection definitions into the project first (Steel > Connections)."
@@ -224,13 +270,17 @@ class ApplyConnectionsWindow(object):
             self._logger.info("No connection types found in document")
             return
 
-        # Populate both dropdowns with the same list
+        # Populate all four dropdowns (Beam-Beam and Bearer-Beam for each bridge type)
         for ct in self._connection_types:
             self._conn_combo_concrete.Items.Add(ct.name)
             self._conn_combo_timber.Items.Add(ct.name)
+            self._bb_conn_combo_concrete.Items.Add(ct.name)
+            self._bb_conn_combo_timber.Items.Add(ct.name)
 
-        self._conn_combo_concrete.SelectedIndex = 0
-        self._conn_combo_timber.SelectedIndex   = 0
+        self._conn_combo_concrete.SelectedIndex    = 0
+        self._conn_combo_timber.SelectedIndex      = 0
+        self._bb_conn_combo_concrete.SelectedIndex = 0
+        self._bb_conn_combo_timber.SelectedIndex   = 0
 
         self._set_footer(
             "{0} structural connection type(s) available.".format(len(self._connection_types))
@@ -268,7 +318,7 @@ class ApplyConnectionsWindow(object):
     # ------------------------------------------------------------------
 
     def _controls(self, bridge_type):
-        """Return the UI control references for a given bridge type.
+        """Return the UI control references for a given bridge type (Beam-Beam).
 
         Returns:
             (beam_label, result_text, result_card)
@@ -284,6 +334,221 @@ class ApplyConnectionsWindow(object):
             self._result_text_timber,
             self._result_card_timber,
         )
+
+    def _bb_controls(self, bridge_type):
+        """Return the UI control references for Bearer-Beam for a given bridge type.
+
+        Returns:
+            (beam_label, bearer_label, result_text, result_card)
+        """
+        if bridge_type == BRIDGE_CONCRETE:
+            return (
+                self._bb_beam_label_concrete,
+                self._bb_bearer_label_concrete,
+                self._bb_result_text_concrete,
+                self._bb_result_card_concrete,
+            )
+        return (
+            self._bb_beam_label_timber,
+            self._bb_bearer_label_timber,
+            self._bb_result_text_timber,
+            self._bb_result_card_timber,
+        )
+
+    def _get_bb_connection_type_id(self, bridge_type):
+        """Return the ElementId of the selected Bearer-Beam connection type, or None."""
+        if bridge_type == BRIDGE_CONCRETE:
+            combo = self._bb_conn_combo_concrete
+        else:
+            combo = self._bb_conn_combo_timber
+
+        idx = combo.SelectedIndex
+        if idx < 0 or idx >= len(self._connection_types):
+            return None
+        return self._connection_types[idx].element_id
+
+    # ------------------------------------------------------------------
+    # Event: Select Reference Beam (Bearer–Beam)
+    # ------------------------------------------------------------------
+
+    def _on_select_bb_beam(self, bridge_type):
+        """Handle 'Select Reference Beam' click for Bearer-Beam."""
+        beam_label, bearer_label, result_text, result_card = self._bb_controls(bridge_type)
+
+        self._window.Hide()
+        element = None
+        cancelled = False
+        try:
+            element, cancelled = pick_structural_framing(self._uidoc)
+        except Exception as ex:
+            self._logger.error("Error during BB reference beam selection", exc=ex)
+        finally:
+            self._window.Show()
+
+        if cancelled or element is None:
+            self._set_bb_result(bridge_type, "Beam selection cancelled.", neutral=True)
+            self._set_footer("Beam selection cancelled.")
+            return
+
+        ok, msg, validated = validate_main_beam(self._doc, element.Id)
+        if not ok:
+            self._set_bb_result(bridge_type, msg, error=True)
+            self._set_footer("Invalid beam selection: " + msg)
+            return
+
+        self._bb_beam_id[bridge_type] = element.Id
+        display = describe_element(element)
+
+        try:
+            type_id_val = element.GetTypeId().IntegerValue
+        except Exception:
+            type_id_val = "Unknown"
+
+        beam_label.Text = "{0}\nTypeId: {1}".format(display, type_id_val)
+        self._set_bb_result(bridge_type, "Reference Beam selected: " + display, neutral=True)
+        self._set_footer("Reference Beam selected. Now select a Reference Bearer.")
+        self._logger.info(
+            "BB Reference Beam selected",
+            bridge_type=bridge_type,
+            element=display,
+            element_id=element_id_value(element.Id),
+        )
+
+    # ------------------------------------------------------------------
+    # Event: Select Reference Bearer (Bearer–Beam)
+    # ------------------------------------------------------------------
+
+    def _on_select_bb_bearer(self, bridge_type):
+        """Handle 'Select Reference Bearer' click for Bearer-Beam."""
+        beam_label, bearer_label, result_text, result_card = self._bb_controls(bridge_type)
+
+        self._window.Hide()
+        element = None
+        cancelled = False
+        try:
+            element, cancelled = pick_structural_framing(self._uidoc)
+        except Exception as ex:
+            self._logger.error("Error during BB reference bearer selection", exc=ex)
+        finally:
+            self._window.Show()
+
+        if cancelled or element is None:
+            self._set_bb_result(bridge_type, "Bearer selection cancelled.", neutral=True)
+            self._set_footer("Bearer selection cancelled.")
+            return
+
+        ok, msg, validated = validate_main_beam(self._doc, element.Id)
+        if not ok:
+            self._set_bb_result(bridge_type, msg, error=True)
+            self._set_footer("Invalid bearer selection: " + msg)
+            return
+
+        self._bb_bearer_id[bridge_type] = element.Id
+        display = describe_element(element)
+
+        try:
+            type_id_val = element.GetTypeId().IntegerValue
+        except Exception:
+            type_id_val = "Unknown"
+
+        bearer_label.Text = "{0}\nTypeId: {1}".format(display, type_id_val)
+        self._set_bb_result(bridge_type, "Reference Bearer selected: " + display, neutral=True)
+        self._set_footer("Reference Bearer selected. Click Apply to run the Bearer-Beam workflow.")
+        self._logger.info(
+            "BB Reference Bearer selected",
+            bridge_type=bridge_type,
+            element=display,
+            element_id=element_id_value(element.Id),
+        )
+
+    # ------------------------------------------------------------------
+    # Event: Apply Bearer–Beam Connections
+    # ------------------------------------------------------------------
+
+    def _on_apply_bearer_beam(self, bridge_type):
+        """Run the full Bearer-Beam connection workflow for the given bridge type."""
+        # --- Step 1: Connection type ---
+        conn_type_id = self._get_bb_connection_type_id(bridge_type)
+        ok, msg = validate_connection_selection(conn_type_id)
+        if not ok:
+            self._set_bb_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        # --- Step 2: Validate Reference Beam ---
+        beam_id = self._bb_beam_id.get(bridge_type)
+        if beam_id is None:
+            msg = "No Reference Beam selected. Click 'Select Reference Beam' first."
+            self._set_bb_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        ok, msg, _ = validate_main_beam(self._doc, beam_id)
+        if not ok:
+            self._set_bb_result(bridge_type, "Reference Beam invalid: " + msg, error=True)
+            self._set_footer("Reference Beam invalid.")
+            return
+
+        # --- Step 3: Validate Reference Bearer ---
+        bearer_id = self._bb_bearer_id.get(bridge_type)
+        if bearer_id is None:
+            msg = "No Reference Bearer selected. Click 'Select Reference Bearer' first."
+            self._set_bb_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        ok, msg, _ = validate_main_beam(self._doc, bearer_id)
+        if not ok:
+            self._set_bb_result(bridge_type, "Reference Bearer invalid: " + msg, error=True)
+            self._set_footer("Reference Bearer invalid.")
+            return
+
+        # --- Step 4: Guard — same TypeId means ambiguous roles ---
+        try:
+            beam_elem   = self._doc.GetElement(beam_id)
+            bearer_elem = self._doc.GetElement(bearer_id)
+            if beam_elem.GetTypeId() == bearer_elem.GetTypeId():
+                msg = (
+                    "The Reference Beam and Reference Bearer share the same Revit TypeId.\n"
+                    "Cannot distinguish Beam from Bearer roles.\n"
+                    "Please select references of DIFFERENT element types."
+                )
+                self._set_bb_result(bridge_type, msg, error=True)
+                self._set_footer("Same TypeId — select a different Reference Bearer.")
+                return
+        except Exception as ex:
+            self._logger.warning("TypeId pre-check failed; will rely on handler guard", exc=ex)
+
+        # --- Step 5: Populate handler and raise ExternalEvent ---
+        self._set_bb_result(bridge_type, "Detecting Bearer-to-Beam joints...", neutral=True)
+        self._set_footer("Scanning for Bearer-Beam joints and applying connections...")
+        self._update_ui()
+
+        if self._handler and self._ext_event:
+            if bridge_type == BRIDGE_CONCRETE:
+                dir_toggle = self._bb_dir_toggle_concrete
+            else:
+                dir_toggle = self._bb_dir_toggle_timber
+
+            is_reversed = False
+            try:
+                if dir_toggle is not None and dir_toggle.IsChecked:
+                    is_reversed = True
+            except Exception:
+                pass
+
+            self._handler.request_type      = REQUEST_APPLY_BEARER_BEAM
+            # Use a bridge_type key that the callback can route to BB result cards
+            self._handler.bridge_type       = bridge_type + "-bb"
+            self._handler.connection_type_id = conn_type_id
+            self._handler.ref_beam_id       = beam_id
+            self._handler.ref_bearer_id     = bearer_id
+            self._handler.reverse_direction = is_reversed
+            self._ext_event.Raise()
+        else:
+            self._set_bb_result(
+                bridge_type, "Internal error: ExternalEvent not initialized.", error=True
+            )
 
     # ------------------------------------------------------------------
     # Event: Select Main Beam
@@ -418,22 +683,35 @@ class ApplyConnectionsWindow(object):
                 status = result_dict.get("status")
                 msg = result_dict.get("message", "")
                 footer = result_dict.get("footer", None)
-                
-                if status == "error":
-                    self._set_result(bridge_type, msg, error=True)
-                elif status == "warning":
-                    self._set_result(bridge_type, msg, warning=True)
-                elif status == "success":
-                    self._set_result(bridge_type, msg, success=True)
+
+                # Bearer-Beam results are delivered with a "-bb" suffix
+                if isinstance(bridge_type, str) and bridge_type.endswith("-bb"):
+                    actual_bt = bridge_type[:-3]  # strip "-bb"
+                    if status == "error":
+                        self._set_bb_result(actual_bt, msg, error=True)
+                    elif status == "warning":
+                        self._set_bb_result(actual_bt, msg, warning=True)
+                    elif status == "success":
+                        self._set_bb_result(actual_bt, msg, success=True)
+                    else:
+                        self._set_bb_result(actual_bt, msg, neutral=True)
                 else:
-                    self._set_result(bridge_type, msg, neutral=True)
-                    
+                    # Beam-Beam path
+                    if status == "error":
+                        self._set_result(bridge_type, msg, error=True)
+                    elif status == "warning":
+                        self._set_result(bridge_type, msg, warning=True)
+                    elif status == "success":
+                        self._set_result(bridge_type, msg, success=True)
+                    else:
+                        self._set_result(bridge_type, msg, neutral=True)
+
                 if footer:
                     self._set_footer(footer)
                 else:
                     if status == "error":
                         self._set_footer("Operation failed.")
-                        
+
                 self._update_ui()
 
             Dispatcher.CurrentDispatcher.Invoke(System.Action(update_action))
@@ -454,6 +732,33 @@ class ApplyConnectionsWindow(object):
             success / warning / error / neutral: mutually exclusive colour flags.
         """
         _, result_text, result_card = self._controls(bridge_type)
+
+        result_text.Text = message
+
+        if success:
+            result_card.Background = _BG_SUCCESS
+            result_text.Foreground = _BRUSH_SUCCESS
+        elif warning:
+            result_card.Background = _BG_WARNING
+            result_text.Foreground = _BRUSH_WARNING
+        elif error:
+            result_card.Background = _BG_ERROR
+            result_text.Foreground = _BRUSH_ERROR
+        else:
+            # neutral / info
+            result_card.Background = _BG_INFO
+            result_text.Foreground = _BRUSH_INFO
+
+    def _set_bb_result(self, bridge_type, message,
+                       success=False, warning=False, error=False, neutral=False):
+        """Update the Bearer-Beam result card text and background colour.
+
+        Args:
+            bridge_type: BRIDGE_CONCRETE or BRIDGE_TIMBER (without "-bb" suffix)
+            message:     str to display.
+            success / warning / error / neutral: mutually exclusive colour flags.
+        """
+        _, _, result_text, result_card = self._bb_controls(bridge_type)
 
         result_text.Text = message
 
