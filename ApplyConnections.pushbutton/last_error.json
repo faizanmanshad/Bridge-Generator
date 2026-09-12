@@ -1,8 +1,8 @@
 {
-    "exception_type": "AttributeError", 
+    "exception_type": "UnboundLocalError", 
     "operation": "REQUEST_APPLY_BRACING_CONNECTION", 
     "main_beam_id": null, 
-    "connection_type_id": 547273, 
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 378, in _execute_apply_bracing_connection\n    if not symbol.IsActive:\nAttributeError: 'StructuralConnectionHandlerType' object has no attribute 'IsActive'\n", 
-    "exception_message": "'StructuralConnectionHandlerType' object has no attribute 'IsActive'"
+    "connection_type_id": 1026026, 
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 810, in _execute_apply_bracing_connection\n    p_origin_final = diag_p_target_ref\nUnboundLocalError: Local variable 'diag_p_target_ref' referenced before assignment.\n", 
+    "exception_message": "Local variable 'diag_p_target_ref' referenced before assignment."
 }

@@ -52,6 +52,8 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
         self.ref_bearer_id = None
         self.stable_face_ref = None
         self.face_point = None
+        self.beam_width_param_name = None
+        self.user_flange_offset_mm = 0.0
 
         self.logger = get_logger()
         # Callback to update the WPF window UI thread
@@ -491,6 +493,16 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             diag_calc_origin = "None"
             diag_offset_30 = "None"
             diag_offset_5 = "None"
+            
+            # Initialize these diagnostic variables to prevent UnboundLocalError
+            diag_beam_name = "N/A"
+            diag_beam_storage = "N/A"
+            diag_beam_mm = 0.0
+            diag_p_center = XYZ.Zero
+            diag_side_dir = XYZ.Zero
+            diag_p_flange = XYZ.Zero
+            diag_p_target_ref = insertion_point
+            
             final_insertion_point = insertion_point
             
             try:
@@ -512,40 +524,81 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                     forward_dir = ref_dir # Bearer direction
                     side_dir = forward_dir.CrossProduct(global_normal).Normalize()
                     
-                    # --- COMPUTE MATHEMATICAL INTERSECTION ---
+                    # --- NEW PARAMETER-DRIVEN LATERAL OFFSET ---
                     try:
-                        p1 = ref_bearer.Location.Curve.GetEndPoint(0)
-                        p2 = ref_bearer.Location.Curve.GetEndPoint(1)
-                        p3 = beam_curve.GetEndPoint(0)
-                        p4 = beam_curve.GetEndPoint(1)
+                        # 1. Fetch the Beam Width parameter value
+                        # First try the Beam's Type parameters
+                        beam_type = doc.GetElement(ref_beam.GetTypeId())
+                        param = beam_type.LookupParameter(self.beam_width_param_name) if beam_type else None
                         
-                        x1, y1 = p1.X, p1.Y
-                        x2, y2 = p2.X, p2.Y
-                        x3, y3 = p3.X, p3.Y
-                        x4, y4 = p4.X, p4.Y
+                        if param is None:
+                            # Try the beam instance itself (fallback)
+                            param = ref_beam.LookupParameter(self.beam_width_param_name)
                         
-                        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
-                        if abs(denom) > 1e-5:
-                            ix = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom
-                            iy = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom
+                        if param is None or not param.HasValue:
+                            raise Exception("Could not find parameter '{}' on the selected Beam.".format(self.beam_width_param_name))
                             
-                            # Validating finite intersection (check if intersection is within bounding segments, allow 5% tolerance)
-                            def is_within(v, bounds, tol=0.1):
-                                min_b = min(bounds) - tol
-                                max_b = max(bounds) + tol
-                                return min_b <= v <= max_b
-                                
-                            if not (is_within(ix, (x1, x2)) and is_within(iy, (y1, y2)) and 
-                                    is_within(ix, (x3, x4)) and is_within(iy, (y3, y4))):
-                                raise Exception("Calculated intersection ({},{}) lies far outside the finite member segments.".format(round(ix,2), round(iy,2)))
-
-                            final_insertion_point = XYZ(ix, iy, insertion_point.Z)
-                            diag_calc_origin = "Finite Intersection: ({}, {}, {})".format(round(ix,2), round(iy,2), round(insertion_point.Z,2))
+                        beam_width_internal = param.AsDouble()
+                        
+                        # 2. Convert user offset to internal units
+                        user_offset_internal = self.user_flange_offset_mm / 304.8
+                        
+                        # 3. Determine Beam Centerline reference point
+                        proj_result = beam_curve.Project(insertion_point)
+                        if proj_result is None:
+                            raise Exception("Could not project plate point onto Beam LocationCurve.")
+                        p_center = proj_result.XYZPoint
+                        
+                        # 4. Determine which side of the beam contains the bearer
+                        bearer_curve = ref_bearer.Location.Curve
+                        ep0 = bearer_curve.GetEndPoint(0)
+                        ep1 = bearer_curve.GetEndPoint(1)
+                        
+                        # Pick the endpoint that is furthest from the beam centerline
+                        if ep0.DistanceTo(p_center) > ep1.DistanceTo(p_center):
+                            bearer_side_point = ep0
                         else:
-                            raise Exception("Bearer and Beam lines are parallel.")
-                    except Exception as int_ex:
-                        raise Exception("Finite joint intersection failed: " + str(int_ex))
-                    
+                            bearer_side_point = ep1
+                            
+                        raw_side_vector = bearer_side_point - p_center
+                        
+                        # Remove longitudinal component
+                        lateral_vector = raw_side_vector - beam_dir * raw_side_vector.DotProduct(beam_dir)
+                        if lateral_vector.IsAlmostEqualTo(XYZ.Zero):
+                            raise Exception("Bearer aligns perfectly with Beam. Cannot determine lateral side.")
+                            
+                        direction_toward_bearer = lateral_vector.Normalize()
+                        
+                        # 5. Apply Mathematical Correction to insertion point
+                        # This places the *FamilyOrigin* exactly at the target reference edge.
+                        current_lateral = (insertion_point - p_center).DotProduct(direction_toward_bearer)
+                        desired_lateral = (beam_width_internal / 2.0) + user_offset_internal
+                        lateral_delta = desired_lateral - current_lateral
+                        
+                        final_insertion_point = insertion_point + direction_toward_bearer * lateral_delta
+                        
+                        # Store these for diagnostics later
+                        diag_beam_name = param.Definition.Name
+                        diag_beam_storage = str(param.StorageType)
+                        diag_beam_internal = beam_width_internal
+                        diag_beam_mm = beam_width_internal * 304.8
+                        
+                        diag_p_center = p_center
+                        diag_side_dir = direction_toward_bearer
+                        diag_p_flange = p_center + direction_toward_bearer * (beam_width_internal / 2.0)
+                        diag_p_target_ref = final_insertion_point
+                        
+                        diag_calc_origin = (
+                            "Width: {} mm, Offset: {} mm | "
+                            "Lat Delta: {} mm"
+                        ).format(
+                            round(diag_beam_mm, 1),
+                            round(self.user_flange_offset_mm, 1),
+                            round(lateral_delta * 304.8, 1)
+                        )
+                    except Exception as lat_ex:
+                        raise Exception("Parameter-driven lateral offset failed: " + str(lat_ex))
+
                     # Dump the family bounding box to understand where its origin is
                     bbox = symbol.get_BoundingBox(None)
                     if bbox:
@@ -558,7 +611,8 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                     else:
                         diag_beam_info = "Family BBox: None"
             except Exception as ex:
-                diag_beam_info = "Error: " + str(ex)
+                # DO NOT mask the error. If calculating the offset or getting beam info fails, we MUST abort.
+                raise Exception("Failed to calculate bracing placement geometry: " + str(ex))
 
             # ---------------------------------------------------------------
             # PLACEMENT ATTEMPTS
@@ -651,44 +705,30 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                         raise Exception(err_msg)
                         
             # ---------------------------------------------------------------
-            # GEOMETRIC ALIGNMENT & TRANSLATION (30mm / 5mm RULES)
+            # BASIC ORIENTATION FIX & PHYSICAL OFFSET CORRECTION
             # ---------------------------------------------------------------
             diag_rotation = "None"
-            diag_translation = "None"
+            diag_offset_calc = "None"
+            final_physical_dist = "N/A"
             
             if instance:
                 try:
-                    from Autodesk.Revit.DB import ElementTransformUtils, Line, Options, Solid, GeometryInstance
+                    from Autodesk.Revit.DB import ElementTransformUtils, Line, Options, Solid, GeometryInstance, PlanarFace
                     
-                    # --- 1. ORIENTATION FIX ---
                     transform = instance.GetTransform()
                     current_x = transform.BasisX
-                    current_y = transform.BasisY
                     
-                    # We want the plate's local X to align with bearer_dir
-                    # and local Y to point roughly towards the beam (side_dir)
+                    # We want the plate's local X to align with bearer_dir (forward_dir)
                     angle_x = current_x.AngleOnPlaneTo(forward_dir, global_normal)
                     if abs(angle_x) > 1e-4:
                         axis = Line.CreateBound(final_insertion_point, final_insertion_point + global_normal)
                         ElementTransformUtils.RotateElement(doc, instance.Id, axis, angle_x)
                         diag_rotation = "Rotated {} rads to align X with Bearer".format(round(angle_x, 4))
                     
-                    # After rotation, check if Y points AWAY from beam, if so flip 180
-                    transform = instance.GetTransform()
-                    if transform.BasisY.DotProduct(side_dir) < 0:
-                        axis = Line.CreateBound(final_insertion_point, final_insertion_point + global_normal)
-                        ElementTransformUtils.RotateElement(doc, instance.Id, axis, 3.14159265359)
-                        diag_rotation += " | Flipped 180 to face beam"
-                        
                     doc.Regenerate()
                     
-                    # --- 2. LOCAL EDGE MEASUREMENT & TRANSLATION ---
+                    # Geometry Inspector Helper
                     def get_local_face_distance(element, origin_pt, search_dir, expected_normal=None, max_distance=3.0):
-                        """Find the planar face of an element closest to origin_pt looking in search_dir.
-                           If expected_normal is provided, only faces roughly aligning with that normal are considered.
-                           Returns the signed distance to project origin_pt onto that face.
-                        """
-                        from Autodesk.Revit.DB import PlanarFace
                         opt = Options()
                         opt.ComputeReferences = True
                         geom = element.get_Geometry(opt)
@@ -705,25 +745,19 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                                         # Only consider faces facing opposite to our search_dir
                                         if normal.DotProduct(search_dir) < -0.5:
                                             if expected_normal and abs(abs(normal.DotProduct(expected_normal)) - 1.0) > 0.1:
-                                                continue # Normal is not parallel to expected_normal
+                                                continue
                                                 
-                                            # Project origin_pt to the plane of this face
                                             f_origin = face.Origin
                                             if tf: f_origin = tf.OfPoint(f_origin)
                                             
                                             vec = f_origin - origin_pt
                                             dist_to_plane = vec.DotProduct(normal)
-                                            
-                                            # If this face is close to the joint
                                             abs_dist = abs(dist_to_plane)
+                                            
                                             if abs_dist < max_distance and abs_dist < best_dist[0]:
-                                                # Ensure the projection point is actually within the bounding box of the face
-                                                # to filter out distant planar extensions of other faces.
                                                 proj = face.Project(origin_pt)
                                                 if proj and proj.Distance < max_distance:
                                                     best_dist[0] = abs_dist
-                                                    # distance along search_dir:
-                                                    # search_dir points towards the face, normal points away.
                                                     best_signed_dist[0] = vec.DotProduct(search_dir)
                                                     
                         def traverse(geom_elem, tf):
@@ -735,69 +769,94 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                                     traverse(obj.GetInstanceGeometry(), new_tf)
                         if geom: traverse(geom, None)
                         return best_signed_dist[0]
-
-                    # Define the axes
-                    # 30mm rule is relative to the beam flange along `side_dir`
-                    # 5mm rule is relative to the bearer edge along `forward_dir`
-                    shift_vec = XYZ.Zero
                     
-                    # --- 30 MM RULE (BEAM) ---
-                    # Find distance from insertion point to local beam face along side_dir
-                    dist_to_beam = get_local_face_distance(ref_beam, final_insertion_point, side_dir, expected_normal=side_dir)
-                    # Find distance from insertion point to plate's front face along side_dir
-                    dist_to_plate_front = get_local_face_distance(instance, final_insertion_point, side_dir)
+                    # 1. Measure physical offset: Family Origin to Plate Edge pointing towards Beam
+                    # search_dir = -diag_side_dir because we want the face looking towards the beam
+                    p_family_origin = instance.GetTransform().Origin
                     
-                    if dist_to_beam is not None and dist_to_plate_front is not None:
-                        current_gap = dist_to_beam - dist_to_plate_front
-                        target_gap = 30.0 / 304.8
-                        shift_mag = current_gap - target_gap
-                        if abs(shift_mag) < 3.0: # Sanity check: do not translate more than 3 feet (900mm)
-                            shift_vec += side_dir * shift_mag
-                            diag_offset_30 = "Local Gap {} mm -> Target 30 mm | Shifted {} mm".format(round(current_gap*304.8, 1), round(shift_mag * 304.8, 1))
-                        else:
-                            diag_offset_30 = "Sanity Check Failed: Shift magnitude {} mm is too large".format(round(shift_mag*304.8, 1))
-                    else:
-                        diag_offset_30 = "Failed to find local faces for 30mm rule"
+                    # We look for the face in the negative side_dir direction (pointing to beam).
+                    # Actually, `search_dir` is the direction we search from the origin. We want to search towards the beam.
+                    # Wait, if we search in -side_dir, `get_local_face_distance` looks for a face whose normal is opposite (-(-side_dir)) = +side_dir.
+                    # Yes, the face of the plate pointing at the beam has normal = -side_dir (if it's to the right of the beam).
+                    # But wait, if we are on the right side of the beam, `side_dir` is positive X. The left face of the plate has normal = -X (-side_dir).
+                    # So `get_local_face_distance` with search_dir = -side_dir expects normal = +side_dir.
+                    # This is correct. The plate's left face normal points AWAY from the plate, so it points towards the beam (-side_dir).
+                    # Wait, if normal points towards beam (-side_dir), then normal . (-side_dir) = 1.0. 
+                    # `get_local_face_distance` says: `if normal.DotProduct(search_dir) < -0.5:`
+                    # So if search_dir = side_dir, it looks for normal ~ -side_dir. Yes!
+                    
+                    plate_origin_to_reference = get_local_face_distance(
+                        instance, 
+                        p_family_origin, 
+                        diag_side_dir, 
+                        expected_normal=diag_side_dir.Negate()
+                    )
+                    
+                    if plate_origin_to_reference is not None:
+                        # 2. Shift the family to align physical reference with target reference
+                        # P_target_reference = P_origin_new + side_dir * plate_origin_to_reference
+                        # P_origin_new = P_target_reference - side_dir * plate_origin_to_reference
+                        # Currently, P_origin_old = P_target_reference
+                        # Move vec = P_origin_new - P_origin_old = - side_dir * plate_origin_to_reference
+                        shift_mag = plate_origin_to_reference
+                        shift_vec = diag_side_dir.Negate() * shift_mag
                         
-                    # --- 5 MM RULE (BEARER REAR) ---
-                    # "Rear side" means opposite to forward_dir (away from the joint).
-                    # We look for the bearer's face along forward_dir?
-                    # The plate bolts under the bearer. It is set back 5mm from the bearer's edge.
-                    # Wait, if the plate is at the joint, the bearer ends at the beam. 
-                    # The bearer end face is along forward_dir (if forward_dir points towards the beam intersection).
-                    dist_to_bearer_end = get_local_face_distance(ref_bearer, final_insertion_point, forward_dir, expected_normal=forward_dir)
-                    dist_to_plate_end = get_local_face_distance(instance, final_insertion_point, forward_dir)
-                    
-                    if dist_to_bearer_end is not None and dist_to_plate_end is not None:
-                        current_gap = dist_to_bearer_end - dist_to_plate_end
-                        target_gap = 5.0 / 304.8
-                        shift_mag = current_gap - target_gap
-                        if abs(shift_mag) < 3.0:
-                            shift_vec += forward_dir * shift_mag
-                            diag_offset_5 = "Local Setback {} mm -> Target 5 mm | Shifted {} mm".format(round(current_gap*304.8, 1), round(shift_mag * 304.8, 1))
-                        else:
-                            diag_offset_5 = "Sanity Check Failed: Shift magnitude {} mm is too large".format(round(shift_mag*304.8, 1))
-                    else:
-                        diag_offset_5 = "Failed to find local faces for 5mm rule"
-                        
-                    if not shift_vec.IsAlmostEqualTo(XYZ.Zero):
                         ElementTransformUtils.MoveElement(doc, instance.Id, shift_vec)
-                        diag_translation = "Vector: " + str(shift_vec)
+                        doc.Regenerate()
+                        
+                        p_origin_final = instance.GetTransform().Origin
+                        p_phys_ref_final = p_origin_final + diag_side_dir * plate_origin_to_reference
+                        
+                        dist_flange_to_phys = p_phys_ref_final.DistanceTo(diag_p_flange)
+                        
+                        diag_offset_calc = (
+                            "Origin-to-Edge: {} mm | "
+                            "Shifted origin by: {} mm"
+                        ).format(round(plate_origin_to_reference * 304.8, 1), round(shift_mag * -304.8, 1))
+                        
+                        final_physical_dist = "{} mm".format(round(dist_flange_to_phys * 304.8, 1))
+                    else:
+                        diag_offset_calc = "Failed to find physical face for offset correction."
+                        p_origin_final = p_family_origin
                         
                 except Exception as geom_ex:
-                    diag_translation = "Geometry Error: " + str(geom_ex)
+                    diag_rotation = "Geometry Error: " + str(geom_ex)
+                    p_origin_final = diag_p_target_ref
 
             t.Commit()
             
             success_msg = (
-                "SUCCESSFUL PLACEMENT\n"
-                "Exact Overload Used: {0}\n"
-                "Rotation Applied: {1}\n"
-                "Translation Applied: {2}\n"
-                "30mm rule info: {3}\n"
-                "5mm rule info: {4}"
+                "SUCCESSFUL PLACEMENT\n\n"
+                "[BEAM DATA]\n"
+                "BeamId: {0} | BearerId: {1}\n"
+                "Width Param: '{2}' ({3})\n"
+                "Beam Width: {4} mm | Half Width: {5} mm\n"
+                "User Offset: {6} mm\n\n"
+                "[VECTORS]\n"
+                "Centerline XYZ: {7}\n"
+                "Side Dir XYZ: {8}\n"
+                "Flange Edge XYZ: {9}\n"
+                "Target Ref XYZ: {10}\n\n"
+                "[ORIGIN COMPENSATION]\n"
+                "Exact Overload: {11}\n"
+                "Rotation: {12}\n"
+                "Origin offset calculation: {13}\n"
+                "Final Family Origin XYZ: {14}\n\n"
+                "FINAL PHYSICAL FLANGE-TO-PLATE-REF DISTANCE: {15}"
             ).format(
-                diag_exact_overload, diag_rotation, diag_translation, diag_offset_30, diag_offset_5
+                self.ref_beam_id.IntegerValue, self.ref_bearer_id.IntegerValue,
+                diag_beam_name, diag_beam_storage,
+                round(diag_beam_mm, 1), round(diag_beam_mm / 2.0, 1),
+                round(self.user_flange_offset_mm, 1),
+                "({}, {}, {})".format(round(diag_p_center.X, 2), round(diag_p_center.Y, 2), round(diag_p_center.Z, 2)),
+                "({}, {}, {})".format(round(diag_side_dir.X, 2), round(diag_side_dir.Y, 2), round(diag_side_dir.Z, 2)),
+                "({}, {}, {})".format(round(diag_p_flange.X, 2), round(diag_p_flange.Y, 2), round(diag_p_flange.Z, 2)),
+                "({}, {}, {})".format(round(diag_p_target_ref.X, 2), round(diag_p_target_ref.Y, 2), round(diag_p_target_ref.Z, 2)),
+                diag_exact_overload,
+                diag_rotation,
+                diag_offset_calc,
+                "({}, {}, {})".format(round(p_origin_final.X, 2), round(p_origin_final.Y, 2), round(p_origin_final.Z, 2)),
+                final_physical_dist
             )
             
             if self.result_callback:

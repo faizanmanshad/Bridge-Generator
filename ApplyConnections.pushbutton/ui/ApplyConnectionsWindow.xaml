@@ -711,6 +711,18 @@
                                                                TextWrapping="Wrap"/>
                                                 </StackPanel>
                                             </Border>
+
+                                            <!-- Parameter Selection -->
+                                            <TextBlock Text="Beam Width Parameter" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                            <ComboBox x:Name="BracingBeamWidthCombo_Concrete"
+                                                      Style="{StaticResource UrbanaCombo}"
+                                                      Margin="0,0,0,10"/>
+
+                                            <TextBlock Text="Flange Edge Offset (mm)" Style="{StaticResource SectionLabel}"/>
+                                            <TextBox x:Name="BracingFlangeOffset_Concrete"
+                                                     Text="30.0"
+                                                     Padding="4"
+                                                     Margin="0,0,0,0"/>
                                         </StackPanel>
                                     </Border>
 
@@ -1251,6 +1263,18 @@
                                                                TextWrapping="Wrap"/>
                                                 </StackPanel>
                                             </Border>
+
+                                            <!-- Parameter Selection -->
+                                            <TextBlock Text="Beam Width Parameter" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                            <ComboBox x:Name="BracingBeamWidthCombo_Timber"
+                                                      Style="{StaticResource UrbanaCombo}"
+                                                      Margin="0,0,0,10"/>
+
+                                            <TextBlock Text="Flange Edge Offset (mm)" Style="{StaticResource SectionLabel}"/>
+                                            <TextBox x:Name="BracingFlangeOffset_Timber"
+                                                     Text="30.0"
+                                                     Padding="4"
+                                                     Margin="0,0,0,0"/>
                                         </StackPanel>
                                     </Border>
 

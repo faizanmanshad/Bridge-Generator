@@ -105,6 +105,29 @@ BRIDGE_TIMBER   = "timber"
 # Window class
 # ---------------------------------------------------------------------------
 
+def _enumerate_symbol_parameters(symbol):
+    """Extract length/double parameters from a FamilySymbol.
+    
+    Returns:
+        list of dicts: [{"name": str, "value": float}, ...] sorted by name.
+    """
+    params = []
+    if not symbol:
+        return params
+    try:
+        from Autodesk.Revit.DB import StorageType
+        for p in symbol.Parameters:
+            if p.HasValue and p.StorageType == StorageType.Double:
+                params.append({
+                    "name": p.Definition.Name,
+                    "value": p.AsDouble()
+                })
+        params.sort(key=lambda x: x["name"])
+    except Exception:
+        pass
+    return params
+
+
 class ApplyConnectionsWindow(object):
     """Wrapper around the WPF ApplyConnectionsWindow XAML.
 
@@ -247,6 +270,8 @@ class ApplyConnectionsWindow(object):
         self._bracing_dir_toggle_concrete   = w.FindName("DirectionToggle_Bracing_Concrete")
         self._bracing_btn_face_concrete     = w.FindName("BtnSelectBracingFace_Concrete")
         self._bracing_face_label_concrete   = w.FindName("SelectedBracingFaceLabel_Concrete")
+        self._bracing_beam_width_combo_concrete = w.FindName("BracingBeamWidthCombo_Concrete")
+        self._bracing_flange_offset_concrete    = w.FindName("BracingFlangeOffset_Concrete")
 
         # --- Bracing Connection controls (Timber) ---
         self._bracing_conn_combo_timber     = w.FindName("ConnectionTypeCombo_Bracing_Timber")
@@ -260,6 +285,8 @@ class ApplyConnectionsWindow(object):
         self._bracing_dir_toggle_timber     = w.FindName("DirectionToggle_Bracing_Timber")
         self._bracing_btn_face_timber       = w.FindName("BtnSelectBracingFace_Timber")
         self._bracing_face_label_timber     = w.FindName("SelectedBracingFaceLabel_Timber")
+        self._bracing_beam_width_combo_timber = w.FindName("BracingBeamWidthCombo_Timber")
+        self._bracing_flange_offset_timber    = w.FindName("BracingFlangeOffset_Timber")
 
         # --- Wire events ---
         self._btn_select_concrete.Click += lambda s, e: self._on_select_beam(BRIDGE_CONCRETE)
@@ -500,12 +527,28 @@ class ApplyConnectionsWindow(object):
         display = describe_element(element)
         try:
             type_id_val = element.GetTypeId().IntegerValue
-        except Exception:
+            symbol = self._doc.GetElement(element.GetTypeId())
+            
+            # Populate parameter dropdown
+            combo = self._bracing_beam_width_combo_concrete if bridge_type == BRIDGE_CONCRETE else self._bracing_beam_width_combo_timber
+            if combo is not None:
+                combo.Items.Clear()
+                params = _enumerate_symbol_parameters(symbol)
+                for p in params:
+                    combo.Items.Add(p["name"])
+                if combo.Items.Count > 0:
+                    combo.SelectedIndex = 0
+                else:
+                    combo.Items.Add("(No numeric parameters)")
+                    combo.SelectedIndex = 0
+                    
+        except Exception as e:
             type_id_val = "Unknown"
+            self._logger.error("Failed to populate beam parameters", exc=e)
 
         beam_label.Text = "{0}\nTypeId: {1}".format(display, type_id_val)
         self._set_bracing_result(bridge_type, "Reference Beam selected: " + display, neutral=True)
-        self._set_footer("Reference Beam selected. Now select a Reference Bearer.")
+        self._set_footer("Reference Beam selected. Choose width parameter, then select a Reference Bearer.")
 
     def _on_select_bracing_bearer(self, bridge_type):
         """Allow user to pick a Reference Bearer for Bracing Connection."""
@@ -600,9 +643,31 @@ class ApplyConnectionsWindow(object):
             self._set_bracing_result(bridge_type, msg, error=True)
             self._set_footer(msg)
             return
+            
+        # Validate Parameter Selection
+        width_combo = self._bracing_beam_width_combo_concrete if bridge_type == BRIDGE_CONCRETE else self._bracing_beam_width_combo_timber
+        if width_combo is None or width_combo.SelectedIndex < 0 or width_combo.SelectedItem == "(No numeric parameters)":
+            msg = "Please select a valid Beam Width Parameter."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+            
+        param_name = width_combo.SelectedItem
+        
+        # Validate User Offset
+        offset_tb = self._bracing_flange_offset_concrete if bridge_type == BRIDGE_CONCRETE else self._bracing_flange_offset_timber
+        try:
+            user_offset_mm = float(offset_tb.Text)
+            if user_offset_mm < 0:
+                raise ValueError("Offset must be positive.")
+        except Exception:
+            msg = "Invalid Flange Edge Offset. Please enter a valid number (e.g., 30.0)."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
 
         self._set_bracing_result(bridge_type, "Placing custom Bracing Connection plate...", neutral=True)
-        self._set_footer("Executing single face-based placement...")
+        self._set_footer("Executing single face-based placement with lateral offset...")
         self._update_ui()
 
         if self._handler and self._ext_event:
@@ -615,6 +680,10 @@ class ApplyConnectionsWindow(object):
             # Send the stable face reference and point as well
             self._handler.stable_face_ref     = stable_ref
             self._handler.face_point          = point
+            
+            # Send width parameter info
+            self._handler.beam_width_param_name = param_name
+            self._handler.user_flange_offset_mm = user_offset_mm
 
             self._ext_event.Raise()
         else:
