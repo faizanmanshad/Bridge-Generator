@@ -125,3 +125,43 @@ def describe_element(element):
         eid = "?"
 
     return "{0} : {1} : {2}".format(family_name, type_name, eid)
+
+# ---------------------------------------------------------------------------
+# Face selection wrapper
+# ---------------------------------------------------------------------------
+
+class FaceSelectionFilter(ISelectionFilter):
+    """ISelectionFilter that accepts only faces belonging to a specific element."""
+
+    def __init__(self, host_element_id):
+        self.host_element_id = host_element_id
+
+    def AllowElement(self, element):
+        return element.Id == self.host_element_id
+
+    def AllowReference(self, reference, point):
+        return reference.ElementId == self.host_element_id
+
+def pick_face(uidoc, host_element_id, prompt="Select a face..."):
+    """Prompt the user to select ONE face on the specified element.
+
+    Returns:
+        (reference, point, False)  — success
+        (None,      None,  True)   — user cancelled
+    """
+    sel_filter = FaceSelectionFilter(host_element_id)
+
+    try:
+        reference = uidoc.Selection.PickObject(
+            ObjectType.Face,
+            sel_filter,
+            prompt,
+        )
+        return reference, reference.GlobalPoint, False
+
+    except OperationCanceledException:
+        # User pressed Escape
+        return None, None, True
+
+    except Exception:
+        raise

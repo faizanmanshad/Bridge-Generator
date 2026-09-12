@@ -653,36 +653,157 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- Bracing Connection (Concrete) — PLACEHOLDER -->
+                    <!-- Bracing Connection (Concrete) — ACTIVE -->
                     <TabItem Header="Bracing Connection" Style="{StaticResource SecondaryTabItem}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14,12,14,8">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                       HorizontalScrollBarVisibility="Disabled"
+                                       Padding="14,12,14,8">
                             <StackPanel>
-                                <TextBlock Text="Bracing Rod Connection"
+                                <!-- Section intro -->
+                                <TextBlock Text="Bracing Connection Plate"
                                            Style="{StaticResource SectionLabel}"/>
-                                <Border Style="{StaticResource PlaceholderCard}">
+                                <TextBlock Text="Select a custom bracing connection plate family, a Reference Beam type, and a Reference Bearer type. Plates are placed beneath the bearer aligned with adjacent main beams."
+                                           FontSize="10.5" Foreground="{StaticResource TextSecondary}"
+                                           TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                                <!-- Connection / Plate Type -->
+                                <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="⏳  Coming in a later stage"
-                                                   FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextSecondary}"
-                                                   Margin="0,0,0,6"/>
-                                        <TextBlock Text="Connection automation for this component will be added in a later development stage."
-                                                   FontSize="11" Foreground="{StaticResource TextMuted}"
-                                                   TextWrapping="Wrap"/>
-                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
-                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
-                                            <TextBlock Text="Connection Direction"
-                                                       FontSize="10" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondary}"
-                                                       Margin="0,0,0,5"/>
-                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
-                                                          HorizontalAlignment="Left"
-                                                          IsEnabled="False"/>
-                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
-                                                       FontSize="9.5"
-                                                       Foreground="{StaticResource TextMuted}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,5,0,0"/>
+                                        <TextBlock Text="Bracing Connection / Plate Type" Style="{StaticResource SectionLabel}"/>
+                                        <ComboBox x:Name="ConnectionTypeCombo_Bracing_Concrete"
+                                                  Style="{StaticResource UrbanaCombo}"
+                                                  Margin="0,0,0,0"/>
+                                        <TextBlock Text="Choose the custom connection plate family definition to apply."
+                                                   FontSize="10" Foreground="{StaticResource TextMuted}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Target Beam & Bearer Selection (Side by Side) -->
+                                <Grid Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left Column: Target Beam Type -->
+                                    <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBracingBeam_Concrete"
+                                                    Content="⊙  Select Reference Beam"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"
+                                                    IsEnabled="False"
+                                                    Opacity="0.45"
+                                                    ToolTip="Not used in current placement test"/>
+                                            <Border x:Name="SelectedBracingBeamCard_Concrete"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Beam"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingBeamLabel_Concrete"
+                                                               Text="— no beam selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
+                                    </Border>
+
+                                    <!-- Right Column: Target Bearer Type -->
+                                    <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Bearer Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBracingBearer_Concrete"
+                                                    Content="⊙  Select Reference Bearer"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"/>
+                                            <Border x:Name="SelectedBracingBearerCard_Concrete"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Bearer"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingBearerLabel_Concrete"
+                                                               Text="— no bearer selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Button x:Name="BtnSelectBracingFace_Concrete"
+                                                    Content="⊙  Select Bearer Bottom Face"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,10,0,10"/>
+                                            <Border x:Name="SelectedBracingFaceCard_Concrete"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Bearer Face"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingFaceLabel_Concrete"
+                                                               Text="— no face selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Status / Result -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Result" Style="{StaticResource SectionLabel}"/>
+                                        <Border x:Name="ResultCard_Bracing_Concrete"
+                                                Style="{StaticResource StatusCard}">
+                                            <TextBlock x:Name="ResultText_Bracing_Concrete"
+                                                       Text="Ready. Select a custom plate type, a Reference Beam, and a Reference Bearer, then click Apply."
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       TextWrapping="Wrap"/>
+                                        </Border>
+
+                                        <!-- Apply + Connection Direction row -->
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    x:Name="BtnApplyBracing_Concrete"
+                                                    Content="▶   Apply Bracing Connections"
+                                                    Style="{StaticResource BtnRun}"
+                                                    Width="270"/>
+                                            <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Margin="16,0,0,0">
+                                                <TextBlock Text="Connection Direction"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <ToggleButton x:Name="DirectionToggle_Bracing_Concrete"
+                                                              Style="{StaticResource ConnDirToggle}"
+                                                              IsEnabled="False"
+                                                              ToolTip="Default: normal plate orientation.  Reverse: 180° rotated orientation."/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
@@ -1075,36 +1196,157 @@
                         </ScrollViewer>
                     </TabItem>
 
-                    <!-- Bracing Connection (Timber) — PLACEHOLDER -->
+                    <!-- Bracing Connection (Timber) — ACTIVE -->
                     <TabItem Header="Bracing Connection" Style="{StaticResource SecondaryTabItem}">
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="14,12,14,8">
+                        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                       HorizontalScrollBarVisibility="Disabled"
+                                       Padding="14,12,14,8">
                             <StackPanel>
-                                <TextBlock Text="Bracing Rod Connection"
+                                <!-- Section intro -->
+                                <TextBlock Text="Bracing Connection Plate"
                                            Style="{StaticResource SectionLabel}"/>
-                                <Border Style="{StaticResource PlaceholderCard}">
+                                <TextBlock Text="Select a custom bracing connection plate family, a Reference Beam type, and a Reference Bearer type. Plates are placed beneath the bearer aligned with adjacent main beams."
+                                           FontSize="10.5" Foreground="{StaticResource TextSecondary}"
+                                           TextWrapping="Wrap" Margin="0,0,0,14"/>
+
+                                <!-- Connection / Plate Type -->
+                                <Border Style="{StaticResource Card}">
                                     <StackPanel>
-                                        <TextBlock Text="⏳  Coming in a later stage"
-                                                   FontSize="12" FontWeight="SemiBold"
-                                                   Foreground="{StaticResource TextSecondary}"
-                                                   Margin="0,0,0,6"/>
-                                        <TextBlock Text="Connection automation for this component will be added in a later development stage."
-                                                   FontSize="11" Foreground="{StaticResource TextMuted}"
-                                                   TextWrapping="Wrap"/>
-                                        <!-- Connection Direction — placeholder (disabled until workflow is implemented) -->
-                                        <StackPanel Margin="0,14,0,0" Opacity="0.55">
-                                            <TextBlock Text="Connection Direction"
-                                                       FontSize="10" FontWeight="SemiBold"
-                                                       Foreground="{StaticResource TextSecondary}"
-                                                       Margin="0,0,0,5"/>
-                                            <ToggleButton Style="{StaticResource ConnDirToggle}"
-                                                          HorizontalAlignment="Left"
-                                                          IsEnabled="False"/>
-                                            <TextBlock Text="Direction control will be enabled when this connection workflow is implemented."
-                                                       FontSize="9.5"
-                                                       Foreground="{StaticResource TextMuted}"
-                                                       TextWrapping="Wrap"
-                                                       Margin="0,5,0,0"/>
+                                        <TextBlock Text="Bracing Connection / Plate Type" Style="{StaticResource SectionLabel}"/>
+                                        <ComboBox x:Name="ConnectionTypeCombo_Bracing_Timber"
+                                                  Style="{StaticResource UrbanaCombo}"
+                                                  Margin="0,0,0,0"/>
+                                        <TextBlock Text="Choose the custom connection plate family definition to apply."
+                                                   FontSize="10" Foreground="{StaticResource TextMuted}"
+                                                   Margin="0,6,0,0" TextWrapping="Wrap"/>
+                                    </StackPanel>
+                                </Border>
+
+                                <!-- Target Beam & Bearer Selection (Side by Side) -->
+                                <Grid Margin="0,0,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="10"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Left Column: Target Beam Type -->
+                                    <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBracingBeam_Timber"
+                                                    Content="⊙  Select Reference Beam"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"
+                                                    IsEnabled="False"
+                                                    Opacity="0.45"
+                                                    ToolTip="Not used in current placement test"/>
+                                            <Border x:Name="SelectedBracingBeamCard_Timber"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Beam"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingBeamLabel_Timber"
+                                                               Text="— no beam selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
                                         </StackPanel>
+                                    </Border>
+
+                                    <!-- Right Column: Target Bearer Type -->
+                                    <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Stretch">
+                                        <StackPanel>
+                                            <TextBlock Text="Target Bearer Type" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBracingBearer_Timber"
+                                                    Content="⊙  Select Reference Bearer"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,0,0,10"/>
+                                            <Border x:Name="SelectedBracingBearerCard_Timber"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Reference Bearer"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingBearerLabel_Timber"
+                                                               Text="— no bearer selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <Button x:Name="BtnSelectBracingFace_Timber"
+                                                    Content="⊙  Select Bearer Bottom Face"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Stretch"
+                                                    Margin="0,10,0,10"/>
+                                            <Border x:Name="SelectedBracingFaceCard_Timber"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Bearer Face"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingFaceLabel_Timber"
+                                                               Text="— no face selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+                                </Grid>
+
+                                <!-- Status / Result -->
+                                <Border Style="{StaticResource Card}">
+                                    <StackPanel>
+                                        <TextBlock Text="Result" Style="{StaticResource SectionLabel}"/>
+                                        <Border x:Name="ResultCard_Bracing_Timber"
+                                                Style="{StaticResource StatusCard}">
+                                            <TextBlock x:Name="ResultText_Bracing_Timber"
+                                                       Text="Ready. Select a custom plate type, a Reference Beam, and a Reference Bearer, then click Apply."
+                                                       FontSize="11"
+                                                       Foreground="{StaticResource TextSecondary}"
+                                                       TextWrapping="Wrap"/>
+                                        </Border>
+
+                                        <!-- Apply + Connection Direction row -->
+                                        <Grid Margin="0,4,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                                <ColumnDefinition Width="Auto"/>
+                                            </Grid.ColumnDefinitions>
+                                            <Button Grid.Column="0"
+                                                    x:Name="BtnApplyBracing_Timber"
+                                                    Content="▶   Apply Bracing Connections"
+                                                    Style="{StaticResource BtnRun}"
+                                                    Width="270"/>
+                                            <StackPanel Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Margin="16,0,0,0">
+                                                <TextBlock Text="Connection Direction"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <ToggleButton x:Name="DirectionToggle_Bracing_Timber"
+                                                              Style="{StaticResource ConnDirToggle}"
+                                                              IsEnabled="False"
+                                                              ToolTip="Default: normal plate orientation.  Reverse: 180° rotated orientation."/>
+                                            </StackPanel>
+                                        </Grid>
                                     </StackPanel>
                                 </Border>
                             </StackPanel>

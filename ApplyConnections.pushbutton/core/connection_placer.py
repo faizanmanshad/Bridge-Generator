@@ -487,3 +487,130 @@ def apply_bearer_beam_connections_batch(doc, joints, connection_type_id,
         )
         results.append(result)
     return results
+
+
+def apply_bracing_connection(doc, joint_record, family_symbol_id,
+                              reverse_direction=False, logger=None):
+    """Place a custom bracing connection plate FamilyInstance for a JointRecord.
+
+    Args:
+        doc:                Autodesk.Revit.DB.Document
+        joint_record:       JointRecord
+        family_symbol_id:   ElementId of FamilySymbol
+        reverse_direction:  bool — if True, rotates instance 180 degrees or flips
+        logger:             Logger or None
+
+    Returns:
+        dict with status, message, connection_id, etc.
+    """
+    result = {
+        "status": RESULT_FAILED,
+        "message": "",
+        "connection_id": None,
+        "primary_id": joint_record.primary_id,
+        "secondary_id": joint_record.secondary_id,
+        "joint_xyz": joint_record.joint_xyz,
+    }
+
+    try:
+        from Autodesk.Revit.DB import (
+            FilteredElementCollector,
+            FamilyInstance,
+            FamilySymbol,
+            XYZ,
+            Line,
+            ElementTransformUtils,
+        )
+        from Autodesk.Revit.DB.Structure import StructuralType
+
+        # 1. Resolve FamilySymbol
+        symbol = doc.GetElement(family_symbol_id)
+        if not symbol or not isinstance(symbol, FamilySymbol):
+            result["message"] = "Invalid family symbol specified."
+            return result
+
+        if not symbol.IsActive:
+            symbol.Activate()
+            doc.Regenerate()
+
+        # 2. Duplicate Check — check if an instance of this family symbol already exists near joint_xyz
+        target_xyz = joint_record.joint_xyz
+        TOLERANCE_FT = 0.164  # ~50 mm duplicate tolerance
+
+        collector = (
+            FilteredElementCollector(doc)
+            .OfClass(FamilyInstance)
+            .WhereElementIsNotElementType()
+        )
+        for inst in collector:
+            try:
+                if inst.Symbol.Id.IntegerValue == family_symbol_id.IntegerValue:
+                    loc_pt = inst.Location.Point if hasattr(inst.Location, "Point") else None
+                    if loc_pt and loc_pt.DistanceTo(target_xyz) <= TOLERANCE_FT:
+                        result["status"] = RESULT_SKIPPED
+                        result["message"] = "Skipped duplicate bracing plate instance."
+                        result["connection_id"] = inst.Id
+                        return result
+            except Exception:
+                continue
+
+        # 3. Create FamilyInstance
+        bearer_elem = doc.GetElement(joint_record.secondary_id)
+
+        instance = None
+        try:
+            instance = doc.Create.NewFamilyInstance(
+                target_xyz, symbol, StructuralType.NonStructural
+            )
+        except Exception:
+            try:
+                instance = doc.Create.NewFamilyInstance(
+                    target_xyz, symbol, bearer_elem, StructuralType.NonStructural
+                )
+            except Exception as ex_inner:
+                result["message"] = "FamilyInstance creation failed: {0}".format(str(ex_inner))
+                return result
+
+        if not instance:
+            result["message"] = "Failed to create family instance."
+            return result
+
+        # 4. Orientation & Direction
+        import math
+        b_dir = joint_record.secondary_dir
+        angle = math.atan2(b_dir.Y, b_dir.X)
+
+        if reverse_direction:
+            angle += math.pi
+
+        if abs(angle) > 1e-4:
+            axis = Line.CreateBound(target_xyz, XYZ(target_xyz.X, target_xyz.Y, target_xyz.Z + 1.0))
+            ElementTransformUtils.RotateElement(doc, instance.Id, axis, angle)
+
+        result["status"] = RESULT_CREATED
+        result["connection_id"] = instance.Id
+        result["message"] = "Created bracing connection plate instance {0} [{1}].".format(
+            instance.Id.IntegerValue, "Reversed" if reverse_direction else "Default"
+        )
+        return result
+
+    except Exception as ex:
+        result["message"] = "Failed to place bracing connection plate: {0}".format(str(ex))
+        if logger:
+            logger.error(result["message"], exc=ex)
+        return result
+
+
+def apply_bracing_connections_batch(doc, joints, family_symbol_id,
+                                    reverse_direction=False, logger=None):
+    """Apply bracing connection plate placements for a list of JointRecords."""
+    results = []
+    for joint in joints:
+        res = apply_bracing_connection(
+            doc, joint, family_symbol_id,
+            reverse_direction=reverse_direction,
+            logger=logger,
+        )
+        results.append(res)
+    return results
+

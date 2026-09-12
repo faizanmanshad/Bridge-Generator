@@ -52,16 +52,17 @@ from Autodesk.Revit.DB import Transaction, TransactionStatus  # type: ignore
 
 from core.logging_utils        import get_logger
 from core.revit_compat         import element_id_value
-from core.connection_catalog   import get_connection_types, is_available as catalog_available
+from core.connection_catalog   import get_connection_types, get_bracing_plate_symbols, is_available as catalog_available
 from core.validation           import (
     validate_connection_selection,
     validate_main_beam,
     validate_joints,
 )
-from core.selection            import pick_structural_framing, describe_element
+from core.selection            import pick_structural_framing, describe_element, pick_face
 from core.external_event_handler import (
     REQUEST_APPLY_BEAM_BEAM,
     REQUEST_APPLY_BEARER_BEAM,
+    REQUEST_APPLY_BRACING_CONNECTION,
 )
 
 
@@ -142,6 +143,25 @@ class ApplyConnectionsWindow(object):
             BRIDGE_TIMBER:   None,
         }
 
+        # Bracing Connection: beam and bearer references + loaded custom plate family symbols
+        self._bracing_beam_id = {
+            BRIDGE_CONCRETE: None,
+            BRIDGE_TIMBER:   None,
+        }
+        self._bracing_bearer_id = {
+            BRIDGE_CONCRETE: None,
+            BRIDGE_TIMBER:   None,
+        }
+        self._bracing_face_stable_ref = {
+            BRIDGE_CONCRETE: None,
+            BRIDGE_TIMBER:   None,
+        }
+        self._bracing_face_point = {
+            BRIDGE_CONCRETE: None,
+            BRIDGE_TIMBER:   None,
+        }
+        self._bracing_plate_symbols = []
+
         # Available structural connection types (shared across both bridge types)
         self._connection_types = []
 
@@ -215,6 +235,32 @@ class ApplyConnectionsWindow(object):
         self._bb_btn_apply_timber      = w.FindName("BtnApplyBearerBeam_Timber")
         self._bb_dir_toggle_timber     = w.FindName("DirectionToggle_BB_Timber")
 
+        # --- Bracing Connection controls (Concrete) ---
+        self._bracing_conn_combo_concrete   = w.FindName("ConnectionTypeCombo_Bracing_Concrete")
+        self._bracing_btn_beam_concrete     = w.FindName("BtnSelectBracingBeam_Concrete")
+        self._bracing_beam_label_concrete   = w.FindName("SelectedBracingBeamLabel_Concrete")
+        self._bracing_btn_bearer_concrete   = w.FindName("BtnSelectBracingBearer_Concrete")
+        self._bracing_bearer_label_concrete = w.FindName("SelectedBracingBearerLabel_Concrete")
+        self._bracing_result_text_concrete  = w.FindName("ResultText_Bracing_Concrete")
+        self._bracing_result_card_concrete  = w.FindName("ResultCard_Bracing_Concrete")
+        self._bracing_btn_apply_concrete    = w.FindName("BtnApplyBracing_Concrete")
+        self._bracing_dir_toggle_concrete   = w.FindName("DirectionToggle_Bracing_Concrete")
+        self._bracing_btn_face_concrete     = w.FindName("BtnSelectBracingFace_Concrete")
+        self._bracing_face_label_concrete   = w.FindName("SelectedBracingFaceLabel_Concrete")
+
+        # --- Bracing Connection controls (Timber) ---
+        self._bracing_conn_combo_timber     = w.FindName("ConnectionTypeCombo_Bracing_Timber")
+        self._bracing_btn_beam_timber       = w.FindName("BtnSelectBracingBeam_Timber")
+        self._bracing_beam_label_timber     = w.FindName("SelectedBracingBeamLabel_Timber")
+        self._bracing_btn_bearer_timber     = w.FindName("BtnSelectBracingBearer_Timber")
+        self._bracing_bearer_label_timber   = w.FindName("SelectedBracingBearerLabel_Timber")
+        self._bracing_result_text_timber    = w.FindName("ResultText_Bracing_Timber")
+        self._bracing_result_card_timber    = w.FindName("ResultCard_Bracing_Timber")
+        self._bracing_btn_apply_timber      = w.FindName("BtnApplyBracing_Timber")
+        self._bracing_dir_toggle_timber     = w.FindName("DirectionToggle_Bracing_Timber")
+        self._bracing_btn_face_timber       = w.FindName("BtnSelectBracingFace_Timber")
+        self._bracing_face_label_timber     = w.FindName("SelectedBracingFaceLabel_Timber")
+
         # --- Wire events ---
         self._btn_select_concrete.Click += lambda s, e: self._on_select_beam(BRIDGE_CONCRETE)
         self._btn_select_timber.Click   += lambda s, e: self._on_select_beam(BRIDGE_TIMBER)
@@ -231,6 +277,25 @@ class ApplyConnectionsWindow(object):
         self._bb_btn_bearer_timber.Click += lambda s, e: self._on_select_bb_bearer(BRIDGE_TIMBER)
         self._bb_btn_apply_timber.Click  += lambda s, e: self._on_apply_bearer_beam(BRIDGE_TIMBER)
 
+        # Bracing Connection events
+        if self._bracing_btn_beam_concrete:
+            self._bracing_btn_beam_concrete.Click += lambda s, e: self._on_select_bracing_beam(BRIDGE_CONCRETE)
+        if self._bracing_btn_bearer_concrete:
+            self._bracing_btn_bearer_concrete.Click += lambda s, e: self._on_select_bracing_bearer(BRIDGE_CONCRETE)
+        if self._bracing_btn_face_concrete:
+            self._bracing_btn_face_concrete.Click += lambda s, e: self._on_select_bracing_face(BRIDGE_CONCRETE)
+        if self._bracing_btn_apply_concrete:
+            self._bracing_btn_apply_concrete.Click += lambda s, e: self._on_apply_bracing_connection(BRIDGE_CONCRETE)
+
+        if self._bracing_btn_beam_timber:
+            self._bracing_btn_beam_timber.Click += lambda s, e: self._on_select_bracing_beam(BRIDGE_TIMBER)
+        if self._bracing_btn_bearer_timber:
+            self._bracing_btn_bearer_timber.Click += lambda s, e: self._on_select_bracing_bearer(BRIDGE_TIMBER)
+        if self._bracing_btn_face_timber:
+            self._bracing_btn_face_timber.Click += lambda s, e: self._on_select_bracing_face(BRIDGE_TIMBER)
+        if self._bracing_btn_apply_timber:
+            self._bracing_btn_apply_timber.Click += lambda s, e: self._on_apply_bracing_connection(BRIDGE_TIMBER)
+
         w.FindName("BtnClose").Click += lambda s, e: self._on_close(s, e)
 
     # ------------------------------------------------------------------
@@ -246,10 +311,12 @@ class ApplyConnectionsWindow(object):
             for combo in [
                 self._conn_combo_concrete, self._conn_combo_timber,
                 self._bb_conn_combo_concrete, self._bb_conn_combo_timber,
+                self._bracing_conn_combo_concrete, self._bracing_conn_combo_timber,
             ]:
-                combo.Items.Add(hint)
-                combo.SelectedIndex = 0
-                combo.IsEnabled = False
+                if combo is not None:
+                    combo.Items.Add(hint)
+                    combo.SelectedIndex = 0
+                    combo.IsEnabled = False
             self._set_footer("Steel Connection API not available. Connection dropdown disabled.")
             self._logger.warning("StructuralConnectionHandlerType unavailable")
             return
@@ -259,10 +326,12 @@ class ApplyConnectionsWindow(object):
             for combo in [
                 self._conn_combo_concrete, self._conn_combo_timber,
                 self._bb_conn_combo_concrete, self._bb_conn_combo_timber,
+                self._bracing_conn_combo_concrete, self._bracing_conn_combo_timber,
             ]:
-                combo.Items.Add(hint)
-                combo.SelectedIndex = 0
-                combo.IsEnabled = False
+                if combo is not None:
+                    combo.Items.Add(hint)
+                    combo.SelectedIndex = 0
+                    combo.IsEnabled = False
             self._set_footer(
                 "No structural connection types found. "
                 "Load connection definitions into the project first (Steel > Connections)."
@@ -270,17 +339,25 @@ class ApplyConnectionsWindow(object):
             self._logger.info("No connection types found in document")
             return
 
-        # Populate all four dropdowns (Beam-Beam and Bearer-Beam for each bridge type)
+        # Populate all dropdowns (Beam-Beam, Bearer-Beam, and Bracing for each bridge type)
         for ct in self._connection_types:
             self._conn_combo_concrete.Items.Add(ct.name)
             self._conn_combo_timber.Items.Add(ct.name)
             self._bb_conn_combo_concrete.Items.Add(ct.name)
             self._bb_conn_combo_timber.Items.Add(ct.name)
+            if self._bracing_conn_combo_concrete is not None:
+                self._bracing_conn_combo_concrete.Items.Add(ct.name)
+            if self._bracing_conn_combo_timber is not None:
+                self._bracing_conn_combo_timber.Items.Add(ct.name)
 
         self._conn_combo_concrete.SelectedIndex    = 0
         self._conn_combo_timber.SelectedIndex      = 0
         self._bb_conn_combo_concrete.SelectedIndex = 0
         self._bb_conn_combo_timber.SelectedIndex   = 0
+        if self._bracing_conn_combo_concrete is not None:
+            self._bracing_conn_combo_concrete.SelectedIndex = 0
+        if self._bracing_conn_combo_timber is not None:
+            self._bracing_conn_combo_timber.SelectedIndex = 0
 
         self._set_footer(
             "{0} structural connection type(s) available.".format(len(self._connection_types))
@@ -354,6 +431,175 @@ class ApplyConnectionsWindow(object):
             self._bb_result_text_timber,
             self._bb_result_card_timber,
         )
+
+    def _bracing_controls(self, bridge_type):
+        """Return the UI control references for Bracing Connection for a given bridge type.
+
+        Returns:
+            (beam_label, bearer_label, face_label, result_text, result_card)
+        """
+        if bridge_type == BRIDGE_CONCRETE:
+            return (
+                self._bracing_beam_label_concrete,
+                self._bracing_bearer_label_concrete,
+                self._bracing_face_label_concrete,
+                self._bracing_result_text_concrete,
+                self._bracing_result_card_concrete,
+            )
+        return (
+            self._bracing_beam_label_timber,
+            self._bracing_bearer_label_timber,
+            self._bracing_face_label_timber,
+            self._bracing_result_text_timber,
+            self._bracing_result_card_timber,
+        )
+
+    def _get_bracing_plate_symbol_id(self, bridge_type):
+        """Return the ElementId of the selected structural connection type for bracing, or None."""
+        combo = self._bracing_conn_combo_concrete if bridge_type == BRIDGE_CONCRETE else self._bracing_conn_combo_timber
+        if combo is None:
+            return None
+        idx = combo.SelectedIndex
+        if idx < 0 or idx >= len(self._connection_types):
+            return None
+        return self._connection_types[idx].element_id
+
+    def _on_select_bracing_beam(self, bridge_type):
+        """Allow user to pick a Reference Beam for Bracing Connection."""
+        self._window.Hide()
+        element = None
+        cancelled = False
+        try:
+            element, cancelled = pick_structural_framing(self._uidoc)
+        except Exception as ex:
+            self._logger.error("Error during bracing reference beam selection", exc=ex)
+        finally:
+            self._window.Show()
+
+        if cancelled or element is None:
+            self._set_footer("Reference Beam selection cancelled.")
+            return
+
+        self._bracing_beam_id[bridge_type] = element.Id
+        beam_label, _, _, _, _ = self._bracing_controls(bridge_type)
+        display = describe_element(element)
+        try:
+            type_id_val = element.GetTypeId().IntegerValue
+        except Exception:
+            type_id_val = "Unknown"
+
+        beam_label.Text = "{0}\nTypeId: {1}".format(display, type_id_val)
+        self._set_bracing_result(bridge_type, "Reference Beam selected: " + display, neutral=True)
+        self._set_footer("Reference Beam selected. Now select a Reference Bearer.")
+
+    def _on_select_bracing_bearer(self, bridge_type):
+        """Allow user to pick a Reference Bearer for Bracing Connection."""
+        self._window.Hide()
+        element = None
+        cancelled = False
+        try:
+            element, cancelled = pick_structural_framing(self._uidoc)
+        except Exception as ex:
+            self._logger.error("Error during bracing reference bearer selection", exc=ex)
+        finally:
+            self._window.Show()
+
+        if cancelled or element is None:
+            self._set_footer("Reference Bearer selection cancelled.")
+            return
+
+        self._bracing_bearer_id[bridge_type] = element.Id
+        _, bearer_label, _, _, _ = self._bracing_controls(bridge_type)
+        display = describe_element(element)
+        try:
+            type_id_val = element.GetTypeId().IntegerValue
+        except Exception:
+            type_id_val = "Unknown"
+
+        bearer_label.Text = "{0}\nTypeId: {1}".format(display, type_id_val)
+        self._set_bracing_result(bridge_type, "Reference Bearer selected: " + display, neutral=True)
+        self._set_footer("Reference Bearer selected. Now select the Bearer's bottom face.")
+
+    def _on_select_bracing_face(self, bridge_type):
+        """Allow user to pick a face on the selected Reference Bearer."""
+        bearer_id = self._bracing_bearer_id.get(bridge_type)
+        if bearer_id is None:
+            msg = "Select a Reference Bearer first."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        self._window.Hide()
+        reference = None
+        point = None
+        cancelled = False
+        try:
+            reference, point, cancelled = pick_face(self._uidoc, bearer_id)
+        except Exception as ex:
+            self._logger.error("Error during bracing face selection", exc=ex)
+        finally:
+            self._window.Show()
+
+        if cancelled or reference is None:
+            self._set_footer("Face selection cancelled.")
+            return
+
+        stable_ref = reference.ConvertToStableRepresentation(self._doc)
+        self._bracing_face_stable_ref[bridge_type] = stable_ref
+        self._bracing_face_point[bridge_type] = point
+
+        _, _, face_label, _, _ = self._bracing_controls(bridge_type)
+        
+        face_label.Text = "Face selected\nPt: ({0:.2f}, {1:.2f}, {2:.2f})".format(point.X, point.Y, point.Z)
+        self._set_bracing_result(bridge_type, "Face selected on Bearer.", neutral=True)
+        self._set_footer("Face selected. Click Apply to place the custom Bracing Connection plate.")
+
+    def _on_apply_bracing_connection(self, bridge_type):
+        """Run the Bracing Connection plate placement test workflow."""
+        symbol_id = self._get_bracing_plate_symbol_id(bridge_type)
+        if symbol_id is None:
+            msg = "No custom bracing connection plate family selected."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        # BYPASS BEAM CHECK
+        # beam_id = self._bracing_beam_id.get(bridge_type)
+        # if beam_id is None: ...
+
+        bearer_id = self._bracing_bearer_id.get(bridge_type)
+        if bearer_id is None:
+            msg = "No Reference Bearer selected. Click 'Select Reference Bearer' first."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        stable_ref = self._bracing_face_stable_ref.get(bridge_type)
+        point = self._bracing_face_point.get(bridge_type)
+        if stable_ref is None or point is None:
+            msg = "No Bearer Face selected. Click 'Select Bearer Bottom Face' first."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+
+        self._set_bracing_result(bridge_type, "Placing custom Bracing Connection plate...", neutral=True)
+        self._set_footer("Executing single face-based placement...")
+        self._update_ui()
+
+        if self._handler and self._ext_event:
+            self._handler.request_type        = REQUEST_APPLY_BRACING_CONNECTION
+            self._handler.bridge_type         = bridge_type
+            self._handler.connection_type_id  = symbol_id
+            self._handler.ref_bearer_id       = bearer_id
+            
+            # Send the stable face reference and point as well
+            self._handler.stable_face_ref     = stable_ref
+            self._handler.face_point          = point
+
+            self._ext_event.Raise()
+        else:
+            self._set_bracing_result(bridge_type, "Internal error: ExternalEvent not initialized.", error=True)
+
 
     def _get_bb_connection_type_id(self, bridge_type):
         """Return the ElementId of the selected Bearer-Beam connection type, or None."""
@@ -695,6 +941,16 @@ class ApplyConnectionsWindow(object):
                         self._set_bb_result(actual_bt, msg, success=True)
                     else:
                         self._set_bb_result(actual_bt, msg, neutral=True)
+                elif isinstance(bridge_type, str) and bridge_type.endswith("-bracing"):
+                    actual_bt = bridge_type[:-8]  # strip "-bracing"
+                    if status == "error":
+                        self._set_bracing_result(actual_bt, msg, error=True)
+                    elif status == "warning":
+                        self._set_bracing_result(actual_bt, msg, warning=True)
+                    elif status == "success":
+                        self._set_bracing_result(actual_bt, msg, success=True)
+                    else:
+                        self._set_bracing_result(actual_bt, msg, neutral=True)
                 else:
                     # Beam-Beam path
                     if status == "error":
@@ -705,6 +961,7 @@ class ApplyConnectionsWindow(object):
                         self._set_result(bridge_type, msg, success=True)
                     else:
                         self._set_result(bridge_type, msg, neutral=True)
+
 
                 if footer:
                     self._set_footer(footer)
@@ -775,6 +1032,35 @@ class ApplyConnectionsWindow(object):
             # neutral / info
             result_card.Background = _BG_INFO
             result_text.Foreground = _BRUSH_INFO
+
+    def _set_bracing_result(self, bridge_type, message,
+                            success=False, warning=False, error=False, neutral=False):
+        """Update the Bracing Connection result card text and background colour.
+
+        Args:
+            bridge_type: BRIDGE_CONCRETE or BRIDGE_TIMBER (without "-bracing" suffix)
+            message:     str to display.
+            success / warning / error / neutral: mutually exclusive colour flags.
+        """
+        _, _, _, result_text, result_card = self._bracing_controls(bridge_type)
+
+        if result_text and result_card:
+            result_text.Text = message
+
+            if success:
+                result_card.Background = _BG_SUCCESS
+                result_text.Foreground = _BRUSH_SUCCESS
+            elif warning:
+                result_card.Background = _BG_WARNING
+                result_text.Foreground = _BRUSH_WARNING
+            elif error:
+                result_card.Background = _BG_ERROR
+                result_text.Foreground = _BRUSH_ERROR
+            else:
+                # neutral / info
+                result_card.Background = _BG_INFO
+                result_text.Foreground = _BRUSH_INFO
+
 
     def _set_footer(self, text):
         """Update the footer status bar text."""

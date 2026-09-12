@@ -1,0 +1,8 @@
+{
+    "exception_type": "UnboundLocalError", 
+    "operation": "REQUEST_APPLY_BRACING_CONNECTION", 
+    "main_beam_id": null, 
+    "connection_type_id": 1082844, 
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 582, in _execute_apply_bracing_connection\n    err_msg = (\nUnboundLocalError: Local variable 'original_loc_point' referenced before assignment.\n", 
+    "exception_message": "Local variable 'original_loc_point' referenced before assignment."
+}

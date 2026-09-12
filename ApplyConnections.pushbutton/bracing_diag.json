@@ -1,0 +1,17 @@
+{
+    "loc_point": "(-3.018314841, -3.829827260, 8.933797373)", 
+    "all_errors": [
+        "FaceBased: Failed to create family instance on face."
+    ], 
+    "symbol_class": "FamilySymbol", 
+    "placement_type": "WorkPlaneBased", 
+    "success_overload": "Point+Host(XYZ, FamilySymbol, Element, StructuralType)", 
+    "ref_dir": "(1.000000000, 0.000000000, 0.000000000)", 
+    "manual_found": true, 
+    "face_normal": "N/A", 
+    "manual_has_host_face": true, 
+    "manual_loc": "(-15.994058358, 3.047057316, 8.695435315)", 
+    "family_name": "Urbana - Steel - Single Sided Bracing Connection Plate - v01", 
+    "is_family_symbol": true, 
+    "manual_host": 1576568
+}

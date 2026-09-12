@@ -164,3 +164,75 @@ def find_by_id(connection_types, element_id):
         if item.int_id == target:
             return item
     return None
+
+
+def get_bracing_plate_symbols(doc):
+    """Return a sorted list of ConnectionTypeItem objects for loaded custom plate FamilySymbols.
+
+    Collects FamilySymbols across Generic Models, Structural Connections,
+    Structural Framing, and Detail Components.
+
+    Args:
+        doc: Autodesk.Revit.DB.Document
+
+    Returns:
+        list[ConnectionTypeItem]
+    """
+    from Autodesk.Revit.DB import FilteredElementCollector, FamilySymbol, BuiltInCategory
+    items = []
+    seen_ids = set()
+
+    categories = [
+        BuiltInCategory.OST_GenericModel,
+        BuiltInCategory.OST_StructConnections,
+        BuiltInCategory.OST_StructuralFraming,
+        BuiltInCategory.OST_DetailComponents,
+    ]
+
+    for cat in categories:
+        try:
+            collector = (
+                FilteredElementCollector(doc)
+                .OfCategory(cat)
+                .OfClass(FamilySymbol)
+            )
+            for symbol in collector:
+                try:
+                    s_id = symbol.Id
+                    int_id = element_id_value(s_id)
+                    if int_id in seen_ids:
+                        continue
+                    seen_ids.add(int_id)
+
+                    family_name = symbol.Family.Name if symbol.Family else ""
+                    type_name = _get_safe_name(symbol)
+                    display_name = "{0} : {1}".format(family_name, type_name) if family_name else type_name
+                    items.append(ConnectionTypeItem(display_name, s_id))
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    # Fallback: if no symbols found in specific categories, collect all FamilySymbols
+    if not items:
+        try:
+            collector = FilteredElementCollector(doc).OfClass(FamilySymbol)
+            for symbol in collector:
+                try:
+                    s_id = symbol.Id
+                    int_id = element_id_value(s_id)
+                    if int_id in seen_ids:
+                        continue
+                    seen_ids.add(int_id)
+                    family_name = symbol.Family.Name if symbol.Family else ""
+                    type_name = _get_safe_name(symbol)
+                    display_name = "{0} : {1}".format(family_name, type_name) if family_name else type_name
+                    items.append(ConnectionTypeItem(display_name, s_id))
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+    items.sort(key=lambda x: x.name.lower())
+    return items
+

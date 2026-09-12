@@ -601,3 +601,146 @@ def _beam_beam_rule(beam_a, beam_b, bridge_type, tolerance):
         log["valid_splice"] = "NO"
         log["reason"] = "Endpoint distance ({0:.1f} mm) exceeds tolerance. (Midspan crossing or simply far apart)".format(dist_mm)
         return None, log
+
+
+# ---------------------------------------------------------------------------
+# Public entry point — Bracing Connection detection
+# ---------------------------------------------------------------------------
+
+def detect_bracing_connection_joints(doc, ref_beam_element, ref_bearer_element, bridge_type,
+                                      logger=None, tolerance=DEFAULT_PROXIMITY_TOLERANCE):
+    """Detect valid Bracing Connection locations between target Beams and Bearers.
+
+    Args:
+        doc:                Autodesk.Revit.DB.Document
+        ref_beam_element:   Reference Beam element
+        ref_bearer_element: Reference Bearer element
+        bridge_type:        str ("concrete" / "timber")
+        logger:             Logger or None
+        tolerance:          float — proximity tolerance in feet
+
+    Returns:
+        (joints, beam_count, bearer_count, valid_joint_count)
+    """
+    try:
+        beam_type_id = ref_beam_element.GetTypeId()
+        bearer_type_id = ref_bearer_element.GetTypeId()
+    except Exception as ex:
+        if logger:
+            logger.error("Failed to extract TypeIds for Bracing Connection detection", exc=ex)
+        return [], 0, 0, 0
+
+    beams = collect_structural_framing(doc, target_type_id=beam_type_id)
+    bearers = collect_structural_framing(doc, target_type_id=bearer_type_id)
+
+    beam_count = len(beams)
+    bearer_count = len(bearers)
+
+    joints = []
+    seen_keys = set()
+
+    for beam in beams:
+        beam_curve, b_err = get_location_curve(beam)
+        if not beam_curve:
+            continue
+        beam_start, beam_end = get_start_end(beam_curve)
+        beam_dir = curve_direction(beam_start, beam_end)
+
+        for bearer in bearers:
+            bearer_curve, br_err = get_location_curve(bearer)
+            if not bearer_curve:
+                continue
+            bearer_start, bearer_end = get_start_end(bearer_curve)
+            bearer_dir = curve_direction(bearer_start, bearer_end)
+
+            records = _bracing_connection_rule(
+                beam, bearer,
+                beam_start, beam_end, beam_dir,
+                bearer_start, bearer_end, bearer_dir,
+                bridge_type, tolerance
+            )
+
+            for rec in records:
+                key = (rec.primary_id.IntegerValue, rec.secondary_id.IntegerValue,
+                       round(rec.joint_xyz.X, 3), round(rec.joint_xyz.Y, 3), round(rec.joint_xyz.Z, 3))
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    joints.append(rec)
+
+    valid_joint_count = len(joints)
+    joints.sort(key=lambda r: (r.primary_id.IntegerValue, r.secondary_id.IntegerValue))
+
+    if logger:
+        logger.info(
+            "Bracing Connection detection complete",
+            beam_count=beam_count,
+            bearer_count=bearer_count,
+            valid_joint_count=valid_joint_count,
+        )
+
+    return joints, beam_count, bearer_count, valid_joint_count
+
+
+def _bracing_connection_rule(beam, bearer,
+                              beam_start, beam_end, beam_dir,
+                              bearer_start, bearer_end, bearer_dir,
+                              bridge_type, tolerance):
+    """Rule for evaluating custom bracing connection plate placement between a beam and bearer."""
+    records = []
+
+    # 1. Anti-parallel guard
+    if is_parallel(bearer_dir, beam_dir):
+        return records
+
+    # 2. Test bearer endpoints against beam centerline segment
+    dist_start = distance_point_to_segment(bearer_start, beam_start, beam_end)
+    dist_end = distance_point_to_segment(bearer_end, beam_start, beam_end)
+
+    OFFSET_30MM = 30.0 / 304.8   # 30 mm in feet
+    OFFSET_5MM  = 5.0 / 304.8    # 5 mm in feet
+
+    if dist_start <= tolerance:
+        # Calculate insertion point beneath bearer at start
+        # Apply 30 mm beam flange relationship + 5 mm rear setback along local vectors
+        v_offset = scale(bearer_dir, OFFSET_30MM)
+        insert_pt = add(bearer_start, v_offset)
+        # Adjust Z for bearer underside (bottom face)
+        from Autodesk.Revit.DB import XYZ
+        insert_pt = XYZ(insert_pt.X, insert_pt.Y, bearer_start.Z - OFFSET_5MM)
+
+        rec = JointRecord(
+            primary_id     = beam.Id,
+            secondary_id   = bearer.Id,
+            joint_xyz      = insert_pt,
+            primary_dir    = beam_dir,
+            secondary_dir  = bearer_dir,
+            angle_deg      = 90.0,
+            connection_end = CONNECTION_END_START,
+            primary_t      = None,
+            bridge_type    = bridge_type,
+            proximity_dist = dist_start,
+        )
+        records.append(rec)
+
+    if dist_end <= tolerance:
+        v_offset = scale(scale(bearer_dir, -1.0), OFFSET_30MM)
+        insert_pt = add(bearer_end, v_offset)
+        from Autodesk.Revit.DB import XYZ
+        insert_pt = XYZ(insert_pt.X, insert_pt.Y, bearer_end.Z - OFFSET_5MM)
+
+        rec = JointRecord(
+            primary_id     = beam.Id,
+            secondary_id   = bearer.Id,
+            joint_xyz      = insert_pt,
+            primary_dir    = beam_dir,
+            secondary_dir  = bearer_dir,
+            angle_deg      = 90.0,
+            connection_end = CONNECTION_END_END,
+            primary_t      = None,
+            bridge_type    = bridge_type,
+            proximity_dist = dist_end,
+        )
+        records.append(rec)
+
+    return records
+
