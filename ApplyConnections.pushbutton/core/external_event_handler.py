@@ -388,61 +388,16 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             # 1. VERIFY symbol
             symbol_id = self.connection_type_id
             symbol = doc.GetElement(symbol_id)
+            if symbol is None:
+                raise Exception("Failed to resolve FamilySymbol for ElementId: {}".format(symbol_id))
+                
             diag_symbol_class = symbol.GetType().Name
             diag_is_family_symbol = hasattr(symbol, "Family")
             
-            # Inspect manually placed instance for ground truth safely
-            manual_instances = FilteredElementCollector(doc).OfClass(FamilyInstance).ToElements()
-            manual_inst = None
+            if not diag_is_family_symbol:
+                raise Exception("Selected item (Id: {}) is of class {}, not a FamilySymbol.".format(symbol_id, diag_symbol_class))
             
-            for inst in manual_instances:
-                inst_name = ""
-                sym_name = ""
-                fam_name = ""
-                
-                try:
-                    from Autodesk.Revit.DB import Element
-                    inst_name = Element.Name.GetValue(inst)
-                except Exception:
-                    try:
-                        inst_name = inst.Name
-                    except Exception:
-                        pass
-                        
-                try:
-                    if hasattr(inst, "Symbol") and inst.Symbol:
-                        try:
-                            sym_name = Element.Name.GetValue(inst.Symbol)
-                        except Exception:
-                            sym_name = inst.Symbol.Name
-                            
-                        if hasattr(inst.Symbol, "Family") and inst.Symbol.Family:
-                            try:
-                                fam_name = Element.Name.GetValue(inst.Symbol.Family)
-                            except Exception:
-                                fam_name = inst.Symbol.Family.Name
-                except Exception:
-                    pass
-                    
-                target = "Single Sided Bracing Connection Plate"
-                if (inst_name and target in inst_name) or \
-                   (sym_name and target in sym_name) or \
-                   (fam_name and target in fam_name):
-                    manual_inst = inst
-                    break
-                    
-            if manual_inst:
-                actual_symbol_id = manual_inst.GetTypeId()
-                actual_symbol = doc.GetElement(actual_symbol_id)
-                diag_manual_type_id = actual_symbol_id.IntegerValue
-                
-                # CASE A FIX: Use the actual symbol if the dropdown ID was incorrect
-                if actual_symbol_id != symbol.Id:
-                    symbol = actual_symbol
-                    diag_symbol_class = symbol.GetType().Name
-                    diag_is_family_symbol = hasattr(symbol, "Family")
-            else:
-                diag_manual_type_id = "Not Found"
+            diag_manual_type_id = symbol_id.IntegerValue
                 
             diag_placement_type = str(symbol.Family.FamilyPlacementType) if diag_is_family_symbol else "N/A"
             diag_is_active = symbol.IsActive if diag_is_family_symbol else False
@@ -530,6 +485,82 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             diag_dot_ref_normal = abs(ref_dir.DotProduct(global_normal))
             
             # ---------------------------------------------------------------
+            # GEOMETRY CALCULATION: BEAM & BEARER
+            # ---------------------------------------------------------------
+            diag_beam_info = "None"
+            diag_calc_origin = "None"
+            diag_offset_30 = "None"
+            diag_offset_5 = "None"
+            final_insertion_point = insertion_point
+            
+            try:
+                # MM to Feet conversion factor
+                MM_TO_FT = 1.0 / 304.8
+                
+                # Fetch Beam
+                ref_beam = doc.GetElement(self.ref_beam_id)
+                if ref_beam:
+                    beam_curve = ref_beam.Location.Curve
+                    beam_dir = beam_curve.Direction.Normalize()
+                    
+                    # Project both to the face plane
+                    # Face normal is global_normal
+                    dot_beam = beam_dir.DotProduct(global_normal)
+                    proj_beam_dir = (beam_dir - global_normal * dot_beam).Normalize()
+                    
+                    # Determine forward and side directions
+                    forward_dir = ref_dir # Bearer direction
+                    side_dir = forward_dir.CrossProduct(global_normal).Normalize()
+                    
+                    # --- COMPUTE MATHEMATICAL INTERSECTION ---
+                    try:
+                        p1 = ref_bearer.Location.Curve.GetEndPoint(0)
+                        p2 = ref_bearer.Location.Curve.GetEndPoint(1)
+                        p3 = beam_curve.GetEndPoint(0)
+                        p4 = beam_curve.GetEndPoint(1)
+                        
+                        x1, y1 = p1.X, p1.Y
+                        x2, y2 = p2.X, p2.Y
+                        x3, y3 = p3.X, p3.Y
+                        x4, y4 = p4.X, p4.Y
+                        
+                        denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+                        if abs(denom) > 1e-5:
+                            ix = ((x1*y2 - y1*x2)*(x3 - x4) - (x1 - x2)*(x3*y4 - y3*x4)) / denom
+                            iy = ((x1*y2 - y1*x2)*(y3 - y4) - (y1 - y2)*(x3*y4 - y3*x4)) / denom
+                            
+                            # Validating finite intersection (check if intersection is within bounding segments, allow 5% tolerance)
+                            def is_within(v, bounds, tol=0.1):
+                                min_b = min(bounds) - tol
+                                max_b = max(bounds) + tol
+                                return min_b <= v <= max_b
+                                
+                            if not (is_within(ix, (x1, x2)) and is_within(iy, (y1, y2)) and 
+                                    is_within(ix, (x3, x4)) and is_within(iy, (y3, y4))):
+                                raise Exception("Calculated intersection ({},{}) lies far outside the finite member segments.".format(round(ix,2), round(iy,2)))
+
+                            final_insertion_point = XYZ(ix, iy, insertion_point.Z)
+                            diag_calc_origin = "Finite Intersection: ({}, {}, {})".format(round(ix,2), round(iy,2), round(insertion_point.Z,2))
+                        else:
+                            raise Exception("Bearer and Beam lines are parallel.")
+                    except Exception as int_ex:
+                        raise Exception("Finite joint intersection failed: " + str(int_ex))
+                    
+                    # Dump the family bounding box to understand where its origin is
+                    bbox = symbol.get_BoundingBox(None)
+                    if bbox:
+                        min_pt = bbox.Min
+                        max_pt = bbox.Max
+                        diag_beam_info = "Family BBox: Min({},{},{}) Max({},{},{})".format(
+                            round(min_pt.X / MM_TO_FT, 1), round(min_pt.Y / MM_TO_FT, 1), round(min_pt.Z / MM_TO_FT, 1),
+                            round(max_pt.X / MM_TO_FT, 1), round(max_pt.Y / MM_TO_FT, 1), round(max_pt.Z / MM_TO_FT, 1)
+                        )
+                    else:
+                        diag_beam_info = "Family BBox: None"
+            except Exception as ex:
+                diag_beam_info = "Error: " + str(ex)
+
+            # ---------------------------------------------------------------
             # PLACEMENT ATTEMPTS
             # ---------------------------------------------------------------
             diag_exact_overload = "None"
@@ -541,7 +572,7 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                 diag_exact_overload = "NewFamilyInstance(Reference, XYZ, XYZ, FamilySymbol)"
                 instance = doc.Create.NewFamilyInstance(
                     face_ref,
-                    insertion_point,
+                    final_insertion_point,
                     ref_dir,
                     symbol
                 )
@@ -555,7 +586,7 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                     sk_plane = SketchPlane.Create(doc, face_ref)
                     diag_exact_overload = "NewFamilyInstance(XYZ, FamilySymbol, Element(SketchPlane), StructuralType)"
                     instance = doc.Create.NewFamilyInstance(
-                        insertion_point, 
+                        final_insertion_point, 
                         symbol, 
                         sk_plane, 
                         StructuralType.NonStructural
@@ -568,11 +599,11 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                         from Autodesk.Revit.DB import Plane, SketchPlane
                         from Autodesk.Revit.DB.Structure import StructuralType
                         
-                        plane = Plane.CreateByNormalAndOrigin(global_normal, insertion_point)
+                        plane = Plane.CreateByNormalAndOrigin(global_normal, final_insertion_point)
                         sk_plane = SketchPlane.Create(doc, plane)
                         diag_exact_overload = "NewFamilyInstance(XYZ, FamilySymbol, Element(MathPlane), StructuralType)"
                         instance = doc.Create.NewFamilyInstance(
-                            insertion_point, 
+                            final_insertion_point, 
                             symbol, 
                             sk_plane, 
                             StructuralType.NonStructural
@@ -610,69 +641,163 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                         err_msg = (
                             "PLACEMENT FAILED ON ALL ATTEMPTS\n"
                             "Stable Face Reference: {0}\n"
-                            "Face Reference ElementId: {1}\n"
-                            "Expected Bearer ElementId: {2}\n"
-                            "Resolved GeometryObject Class: {3}\n"
-                            "Actual Face Normal: {4}\n"
-                            "Original Click Point: {5}\n"
-                            "Projected Face Point: {6}\n"
-                            "Point-to-Face Distance: {7}\n"
-                            "Ref Dir: {8}\n"
-                            "abs(ref_dir dot actual face normal): {9}\n"
-                            "FamilyPlacementType: {10}\n"
-                            "Exceptions: {11}\n\n"
-                            "MANUAL INSTANCE INSPECTION:\n{12}"
+                            "Exceptions: {1}\n\n"
+                            "MANUAL INSTANCE INSPECTION:\n{2}"
                         ).format(
                             self.stable_face_ref,
-                            diag_face_owner_id,
-                            diag_expected_bearer_id,
-                            diag_face_class,
-                            diag_face_normal,
-                            str(original_loc_point),
-                            str(insertion_point),
-                            diag_pt_to_face_dist,
-                            diag_ref_dir_original,
-                            diag_dot_ref_normal,
-                            diag_placement_type,
                             diag_exception,
                             diag_manual_info
                         )
                         raise Exception(err_msg)
                         
-            # If a SketchPlane method succeeded, rotate to align with ref_dir
-            if instance and "SketchPlane" in diag_exact_overload:
-                try:
-                    from Autodesk.Revit.DB import ElementTransformUtils, Line
-                    transform = instance.GetTransform()
-                    current_dir = transform.BasisX
-                    angle = current_dir.AngleOnPlaneTo(ref_dir, global_normal)
-                    if abs(angle) > 1e-5:
-                        axis = Line.CreateBound(insertion_point, insertion_point + global_normal)
-                        ElementTransformUtils.RotateElement(doc, instance.Id, axis, angle)
-                except Exception:
-                    pass
-
+            # ---------------------------------------------------------------
+            # GEOMETRIC ALIGNMENT & TRANSLATION (30mm / 5mm RULES)
+            # ---------------------------------------------------------------
+            diag_rotation = "None"
+            diag_translation = "None"
             
+            if instance:
+                try:
+                    from Autodesk.Revit.DB import ElementTransformUtils, Line, Options, Solid, GeometryInstance
+                    
+                    # --- 1. ORIENTATION FIX ---
+                    transform = instance.GetTransform()
+                    current_x = transform.BasisX
+                    current_y = transform.BasisY
+                    
+                    # We want the plate's local X to align with bearer_dir
+                    # and local Y to point roughly towards the beam (side_dir)
+                    angle_x = current_x.AngleOnPlaneTo(forward_dir, global_normal)
+                    if abs(angle_x) > 1e-4:
+                        axis = Line.CreateBound(final_insertion_point, final_insertion_point + global_normal)
+                        ElementTransformUtils.RotateElement(doc, instance.Id, axis, angle_x)
+                        diag_rotation = "Rotated {} rads to align X with Bearer".format(round(angle_x, 4))
+                    
+                    # After rotation, check if Y points AWAY from beam, if so flip 180
+                    transform = instance.GetTransform()
+                    if transform.BasisY.DotProduct(side_dir) < 0:
+                        axis = Line.CreateBound(final_insertion_point, final_insertion_point + global_normal)
+                        ElementTransformUtils.RotateElement(doc, instance.Id, axis, 3.14159265359)
+                        diag_rotation += " | Flipped 180 to face beam"
+                        
+                    doc.Regenerate()
+                    
+                    # --- 2. LOCAL EDGE MEASUREMENT & TRANSLATION ---
+                    def get_local_face_distance(element, origin_pt, search_dir, expected_normal=None, max_distance=3.0):
+                        """Find the planar face of an element closest to origin_pt looking in search_dir.
+                           If expected_normal is provided, only faces roughly aligning with that normal are considered.
+                           Returns the signed distance to project origin_pt onto that face.
+                        """
+                        from Autodesk.Revit.DB import PlanarFace
+                        opt = Options()
+                        opt.ComputeReferences = True
+                        geom = element.get_Geometry(opt)
+                        best_dist = [1e9]
+                        best_signed_dist = [None]
+                        
+                        def process_solid(solid, tf):
+                            if solid and solid.Faces.Size > 0:
+                                for face in solid.Faces:
+                                    if isinstance(face, PlanarFace):
+                                        normal = face.FaceNormal
+                                        if tf: normal = tf.OfVector(normal).Normalize()
+                                        
+                                        # Only consider faces facing opposite to our search_dir
+                                        if normal.DotProduct(search_dir) < -0.5:
+                                            if expected_normal and abs(abs(normal.DotProduct(expected_normal)) - 1.0) > 0.1:
+                                                continue # Normal is not parallel to expected_normal
+                                                
+                                            # Project origin_pt to the plane of this face
+                                            f_origin = face.Origin
+                                            if tf: f_origin = tf.OfPoint(f_origin)
+                                            
+                                            vec = f_origin - origin_pt
+                                            dist_to_plane = vec.DotProduct(normal)
+                                            
+                                            # If this face is close to the joint
+                                            abs_dist = abs(dist_to_plane)
+                                            if abs_dist < max_distance and abs_dist < best_dist[0]:
+                                                # Ensure the projection point is actually within the bounding box of the face
+                                                # to filter out distant planar extensions of other faces.
+                                                proj = face.Project(origin_pt)
+                                                if proj and proj.Distance < max_distance:
+                                                    best_dist[0] = abs_dist
+                                                    # distance along search_dir:
+                                                    # search_dir points towards the face, normal points away.
+                                                    best_signed_dist[0] = vec.DotProduct(search_dir)
+                                                    
+                        def traverse(geom_elem, tf):
+                            for obj in geom_elem:
+                                if isinstance(obj, Solid): process_solid(obj, tf)
+                                elif isinstance(obj, GeometryInstance):
+                                    new_tf = obj.Transform
+                                    if tf: new_tf = tf.Multiply(new_tf)
+                                    traverse(obj.GetInstanceGeometry(), new_tf)
+                        if geom: traverse(geom, None)
+                        return best_signed_dist[0]
+
+                    # Define the axes
+                    # 30mm rule is relative to the beam flange along `side_dir`
+                    # 5mm rule is relative to the bearer edge along `forward_dir`
+                    shift_vec = XYZ.Zero
+                    
+                    # --- 30 MM RULE (BEAM) ---
+                    # Find distance from insertion point to local beam face along side_dir
+                    dist_to_beam = get_local_face_distance(ref_beam, final_insertion_point, side_dir, expected_normal=side_dir)
+                    # Find distance from insertion point to plate's front face along side_dir
+                    dist_to_plate_front = get_local_face_distance(instance, final_insertion_point, side_dir)
+                    
+                    if dist_to_beam is not None and dist_to_plate_front is not None:
+                        current_gap = dist_to_beam - dist_to_plate_front
+                        target_gap = 30.0 / 304.8
+                        shift_mag = current_gap - target_gap
+                        if abs(shift_mag) < 3.0: # Sanity check: do not translate more than 3 feet (900mm)
+                            shift_vec += side_dir * shift_mag
+                            diag_offset_30 = "Local Gap {} mm -> Target 30 mm | Shifted {} mm".format(round(current_gap*304.8, 1), round(shift_mag * 304.8, 1))
+                        else:
+                            diag_offset_30 = "Sanity Check Failed: Shift magnitude {} mm is too large".format(round(shift_mag*304.8, 1))
+                    else:
+                        diag_offset_30 = "Failed to find local faces for 30mm rule"
+                        
+                    # --- 5 MM RULE (BEARER REAR) ---
+                    # "Rear side" means opposite to forward_dir (away from the joint).
+                    # We look for the bearer's face along forward_dir?
+                    # The plate bolts under the bearer. It is set back 5mm from the bearer's edge.
+                    # Wait, if the plate is at the joint, the bearer ends at the beam. 
+                    # The bearer end face is along forward_dir (if forward_dir points towards the beam intersection).
+                    dist_to_bearer_end = get_local_face_distance(ref_bearer, final_insertion_point, forward_dir, expected_normal=forward_dir)
+                    dist_to_plate_end = get_local_face_distance(instance, final_insertion_point, forward_dir)
+                    
+                    if dist_to_bearer_end is not None and dist_to_plate_end is not None:
+                        current_gap = dist_to_bearer_end - dist_to_plate_end
+                        target_gap = 5.0 / 304.8
+                        shift_mag = current_gap - target_gap
+                        if abs(shift_mag) < 3.0:
+                            shift_vec += forward_dir * shift_mag
+                            diag_offset_5 = "Local Setback {} mm -> Target 5 mm | Shifted {} mm".format(round(current_gap*304.8, 1), round(shift_mag * 304.8, 1))
+                        else:
+                            diag_offset_5 = "Sanity Check Failed: Shift magnitude {} mm is too large".format(round(shift_mag*304.8, 1))
+                    else:
+                        diag_offset_5 = "Failed to find local faces for 5mm rule"
+                        
+                    if not shift_vec.IsAlmostEqualTo(XYZ.Zero):
+                        ElementTransformUtils.MoveElement(doc, instance.Id, shift_vec)
+                        diag_translation = "Vector: " + str(shift_vec)
+                        
+                except Exception as geom_ex:
+                    diag_translation = "Geometry Error: " + str(geom_ex)
+
             t.Commit()
             
             success_msg = (
                 "SUCCESSFUL PLACEMENT\n"
-                "Symbol Class: {0}\n"
-                "Manual Instance TypeId: {1}\n"
-                "FamilyPlacementType: {2}\n"
-                "Face Class: {3}\n"
-                "Face Owner matched Bearer: {4}\n"
-                "Point-to-Face Distance: {5}\n"
-                "Face Normal: {6}\n"
-                "Ref_Dir: {7}\n"
-                "abs(Ref_Dir dot Normal): {8}\n"
-                "Exact Overload Used: {9}\n"
-                "Insertion Point: {10}"
+                "Exact Overload Used: {0}\n"
+                "Rotation Applied: {1}\n"
+                "Translation Applied: {2}\n"
+                "30mm rule info: {3}\n"
+                "5mm rule info: {4}"
             ).format(
-                diag_symbol_class, diag_manual_type_id, diag_placement_type,
-                diag_face_class, diag_face_owner_id == diag_expected_bearer_id,
-                diag_pt_to_face_dist, diag_face_normal, diag_ref_dir_original,
-                diag_dot_ref_normal, diag_exact_overload, str(insertion_point)
+                diag_exact_overload, diag_rotation, diag_translation, diag_offset_30, diag_offset_5
             )
             
             if self.result_callback:

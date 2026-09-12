@@ -695,10 +695,7 @@
                                                     Content="⊙  Select Reference Beam"
                                                     Style="{StaticResource BtnSelect}"
                                                     HorizontalAlignment="Stretch"
-                                                    Margin="0,0,0,10"
-                                                    IsEnabled="False"
-                                                    Opacity="0.45"
-                                                    ToolTip="Not used in current placement test"/>
+                                                    Margin="0,0,0,10"/>
                                             <Border x:Name="SelectedBracingBeamCard_Concrete"
                                                     Style="{StaticResource BeamInfoCard}">
                                                 <StackPanel>
@@ -1238,10 +1235,7 @@
                                                     Content="⊙  Select Reference Beam"
                                                     Style="{StaticResource BtnSelect}"
                                                     HorizontalAlignment="Stretch"
-                                                    Margin="0,0,0,10"
-                                                    IsEnabled="False"
-                                                    Opacity="0.45"
-                                                    ToolTip="Not used in current placement test"/>
+                                                    Margin="0,0,0,10"/>
                                             <Border x:Name="SelectedBracingBeamCard_Timber"
                                                     Style="{StaticResource BeamInfoCard}">
                                                 <StackPanel>

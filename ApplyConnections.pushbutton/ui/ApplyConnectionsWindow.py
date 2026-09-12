@@ -345,19 +345,34 @@ class ApplyConnectionsWindow(object):
             self._conn_combo_timber.Items.Add(ct.name)
             self._bb_conn_combo_concrete.Items.Add(ct.name)
             self._bb_conn_combo_timber.Items.Add(ct.name)
-            if self._bracing_conn_combo_concrete is not None:
-                self._bracing_conn_combo_concrete.Items.Add(ct.name)
-            if self._bracing_conn_combo_timber is not None:
-                self._bracing_conn_combo_timber.Items.Add(ct.name)
-
+            
         self._conn_combo_concrete.SelectedIndex    = 0
         self._conn_combo_timber.SelectedIndex      = 0
         self._bb_conn_combo_concrete.SelectedIndex = 0
         self._bb_conn_combo_timber.SelectedIndex   = 0
-        if self._bracing_conn_combo_concrete is not None:
-            self._bracing_conn_combo_concrete.SelectedIndex = 0
-        if self._bracing_conn_combo_timber is not None:
-            self._bracing_conn_combo_timber.SelectedIndex = 0
+        
+        # Populate Bracing dropdowns using custom FamilySymbols
+        self._bracing_plate_symbols = get_bracing_plate_symbols(self._doc)
+        if not self._bracing_plate_symbols:
+            self._logger.info("No custom Bracing FamilySymbols found in document")
+            hint = "(No custom Bracing connection plates found)"
+            if self._bracing_conn_combo_concrete is not None:
+                self._bracing_conn_combo_concrete.Items.Add(hint)
+                self._bracing_conn_combo_concrete.SelectedIndex = 0
+            if self._bracing_conn_combo_timber is not None:
+                self._bracing_conn_combo_timber.Items.Add(hint)
+                self._bracing_conn_combo_timber.SelectedIndex = 0
+        else:
+            for st in self._bracing_plate_symbols:
+                if self._bracing_conn_combo_concrete is not None:
+                    self._bracing_conn_combo_concrete.Items.Add(st.name)
+                if self._bracing_conn_combo_timber is not None:
+                    self._bracing_conn_combo_timber.Items.Add(st.name)
+            
+            if self._bracing_conn_combo_concrete is not None:
+                self._bracing_conn_combo_concrete.SelectedIndex = 0
+            if self._bracing_conn_combo_timber is not None:
+                self._bracing_conn_combo_timber.SelectedIndex = 0
 
         self._set_footer(
             "{0} structural connection type(s) available.".format(len(self._connection_types))
@@ -457,12 +472,12 @@ class ApplyConnectionsWindow(object):
     def _get_bracing_plate_symbol_id(self, bridge_type):
         """Return the ElementId of the selected structural connection type for bracing, or None."""
         combo = self._bracing_conn_combo_concrete if bridge_type == BRIDGE_CONCRETE else self._bracing_conn_combo_timber
-        if combo is None:
+        if combo is None or not hasattr(self, '_bracing_plate_symbols') or not self._bracing_plate_symbols:
             return None
         idx = combo.SelectedIndex
-        if idx < 0 or idx >= len(self._connection_types):
+        if idx < 0 or idx >= len(self._bracing_plate_symbols):
             return None
-        return self._connection_types[idx].element_id
+        return self._bracing_plate_symbols[idx].element_id
 
     def _on_select_bracing_beam(self, bridge_type):
         """Allow user to pick a Reference Beam for Bracing Connection."""
@@ -563,9 +578,13 @@ class ApplyConnectionsWindow(object):
             self._set_footer(msg)
             return
 
-        # BYPASS BEAM CHECK
-        # beam_id = self._bracing_beam_id.get(bridge_type)
-        # if beam_id is None: ...
+        # Reintroduce single beam reference for geometry calculation
+        beam_id = self._bracing_beam_id.get(bridge_type)
+        if beam_id is None:
+            msg = "No Reference Beam selected. Click 'Select Reference Beam' first."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
 
         bearer_id = self._bracing_bearer_id.get(bridge_type)
         if bearer_id is None:
@@ -591,6 +610,7 @@ class ApplyConnectionsWindow(object):
             self._handler.bridge_type         = bridge_type
             self._handler.connection_type_id  = symbol_id
             self._handler.ref_bearer_id       = bearer_id
+            self._handler.ref_beam_id         = beam_id
             
             # Send the stable face reference and point as well
             self._handler.stable_face_ref     = stable_ref
