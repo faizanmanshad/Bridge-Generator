@@ -719,40 +719,73 @@
 
                                 <!-- Placement Bearer & Clearance Selection -->
                                 <Border Style="{StaticResource Card}" Margin="0,0,0,10">
-                                    <StackPanel>
-                                        <TextBlock Text="Placement Bearer" Style="{StaticResource SectionLabel}"/>
-                                        <Button x:Name="BtnSelectBracingBearer_Concrete"
-                                                Content="⊙  Select Bearer / End"
-                                                Style="{StaticResource BtnSelect}"
-                                                HorizontalAlignment="Left"
-                                                Width="200"
-                                                Margin="0,0,0,10"/>
-                                                
-                                        <!-- Selected Bearer diagnostic card -->
-                                        <Border x:Name="SelectedBracingBearerCard_Concrete"
-                                                Style="{StaticResource BeamInfoCard}">
-                                            <StackPanel>
-                                                <TextBlock Text="Selected Bearer"
-                                                           FontSize="9" FontWeight="SemiBold"
-                                                           Foreground="{StaticResource TextMuted}"
-                                                           Margin="0,0,0,3"/>
-                                                <TextBlock x:Name="SelectedBracingBearerLabel_Concrete"
-                                                           Text="— no bearer selected —"
-                                                           FontSize="11"
-                                                           Foreground="{StaticResource NavyPrimary}"
-                                                           FontWeight="SemiBold"
-                                                           TextWrapping="Wrap"/>
-                                            </StackPanel>
-                                        </Border>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
                                         
-                                        <TextBlock Text="Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
-                                        <TextBox x:Name="BracingFlangeOffset_Concrete"
-                                                 Text="30.0"
-                                                 Padding="4"
-                                                 Width="200"
-                                                 HorizontalAlignment="Left"
-                                                 Margin="0,0,0,0"/>
-                                    </StackPanel>
+                                        <!-- Left Column: Placement Bearer & Offset -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Placement Bearer" Style="{StaticResource SectionLabel}"/>
+                                            <Button x:Name="BtnSelectBracingBearer_Concrete"
+                                                    Content="⊙  Select Bearer"
+                                                    Style="{StaticResource BtnSelect}"
+                                                    HorizontalAlignment="Left"
+                                                    Width="200"
+                                                    Margin="0,0,0,10"/>
+                                                    
+                                            <!-- Selected Bearer diagnostic card -->
+                                            <Border x:Name="SelectedBracingBearerCard_Concrete"
+                                                    Style="{StaticResource BeamInfoCard}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Selected Bearer"
+                                                               FontSize="9" FontWeight="SemiBold"
+                                                               Foreground="{StaticResource TextMuted}"
+                                                               Margin="0,0,0,3"/>
+                                                    <TextBlock x:Name="SelectedBracingBearerLabel_Concrete"
+                                                               Text="— no bearer selected —"
+                                                               FontSize="11"
+                                                               Foreground="{StaticResource NavyPrimary}"
+                                                               FontWeight="SemiBold"
+                                                               TextWrapping="Wrap"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <TextBlock Text="Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                            <TextBox x:Name="BracingFlangeOffset_Concrete"
+                                                     Text="30.0"
+                                                     Padding="4"
+                                                     Width="200"
+                                                     HorizontalAlignment="Left"
+                                                     Margin="0,0,0,0"/>
+                                        </StackPanel>
+                                        
+                                        <!-- Right Column: Rotation & Back Edge Offset -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Rotation" Style="{StaticResource SectionLabel}"/>
+                                            <ComboBox x:Name="BracingRotation_Concrete"
+                                                      Style="{StaticResource UrbanaCombo}"
+                                                      Width="200"
+                                                      HorizontalAlignment="Left"
+                                                      Margin="0,0,0,10"
+                                                      SelectedIndex="3">
+                                                <ComboBoxItem Content="90°"/>
+                                                <ComboBoxItem Content="180°"/>
+                                                <ComboBoxItem Content="270°"/>
+                                                <ComboBoxItem Content="360°"/>
+                                            </ComboBox>
+                                            
+                                            <TextBlock Text="Back Edge Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                            <TextBox x:Name="BracingBackEdgeOffset_Concrete"
+                                                     Text="5.0"
+                                                     Padding="4"
+                                                     Width="200"
+                                                     HorizontalAlignment="Left"
+                                                     Margin="0,0,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
                                 </Border>
 
                                 <!-- Status / Result -->

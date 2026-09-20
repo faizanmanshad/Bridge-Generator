@@ -886,6 +886,24 @@ class ApplyConnectionsWindow(object):
                 self._set_bracing_result(bridge_type, msg, error=True)
                 self._set_footer(msg)
                 return
+                
+            rotation_cb = self._window.FindName("BracingRotation_Concrete")
+            rotation_str = "360"
+            if rotation_cb and hasattr(rotation_cb, "Text") and rotation_cb.Text:
+                rotation_str = rotation_cb.Text.replace(u"°", "")
+            try:
+                user_rotation_deg = float(rotation_str)
+            except Exception:
+                user_rotation_deg = 360.0
+                
+            back_edge_tb = self._window.FindName("BracingBackEdgeOffset_Concrete")
+            try:
+                user_back_edge_mm = float(back_edge_tb.Text)
+            except Exception:
+                msg = "Invalid Back Edge Offset. Please enter a valid number (e.g., 5.0)."
+                self._set_bracing_result(bridge_type, msg, error=True)
+                self._set_footer(msg)
+                return
 
             self._set_bracing_result(bridge_type, "Placing custom Bracing Connection plate...", neutral=True)
             self._set_footer("Executing physical geometry solver...")
@@ -898,6 +916,8 @@ class ApplyConnectionsWindow(object):
                 self._handler.ref_bearer_id       = bearer_id
                 self._handler.click_point         = point
                 self._handler.clearance_mm        = user_offset_mm
+                self._handler.rotation_deg        = user_rotation_deg
+                self._handler.back_edge_offset_mm = user_back_edge_mm
                 
                 self._handler.ref_beam_id         = None
                 self._handler.stable_face_ref     = None

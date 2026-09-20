@@ -337,8 +337,10 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             })
 
     def _execute_apply_bracing_connection(self, doc):
-        """Execute Bracing Connection placement within a Revit transaction for debugging."""
-        
+        """Execute Bracing Connection placement within a Revit transaction with session tracking and back edge offset."""
+        if not hasattr(self, "bracing_session_created"):
+            self.bracing_session_created = {}
+
         if self.bridge_type == "timber":
             self._execute_apply_bracing_connection_timber(doc)
             return
@@ -372,25 +374,36 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             from Autodesk.Revit.DB import FilteredElementCollector, FamilyInstance, BuiltInCategory, Options, Solid, PlanarFace, ViewDetailLevel, XYZ, Line, ElementTransformUtils, Structure
             import math
             
-            # MM to FT
             MM_TO_FT = 1.0 / 304.8
             
-            diag_bearer_name = ref_bearer.Name
+            bearer_id_int = self.ref_bearer_id.IntegerValue
             
+            # Read inputs
+            offset_mm = self.clearance_mm
+            rotation_deg = getattr(self, "rotation_deg", 360.0)
+            back_edge_offset_mm = getattr(self, "back_edge_offset_mm", 5.0)
+            
+            # Session replacement logic
+            session_data = self.bracing_session_created.get(bearer_id_int)
+            if session_data:
+                old_ids = session_data.get("element_ids", [])
+                for eid in old_ids:
+                    if doc.GetElement(eid):
+                        doc.Delete(eid)
+                        
             # --- STAGE 1: GET BOTH BEARER ENDPOINTS ---
             bearer_curve = ref_bearer.Location.Curve
             p0 = bearer_curve.GetEndPoint(0)
             p1 = bearer_curve.GetEndPoint(1)
             
-            # Midpoint C
             p_center = (p0 + p1) / 2.0
             
-            # Inward directions
+            bearer_dir = (p1 - p0).Normalize()
+            
             inward0 = (p_center - p0).Normalize()
             inward1 = (p_center - p1).Normalize()
             
-            # Offset targets along bearer
-            offset_internal = self.clearance_mm * MM_TO_FT
+            offset_internal = offset_mm * MM_TO_FT
             station0 = p0 + inward0 * offset_internal
             station1 = p1 + inward1 * offset_internal
             
@@ -434,7 +447,7 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             bearer_bottom_face, face_ref, lowest_z = find_bottom_face(bearer_geom, None)
             
             if bearer_bottom_face is None or face_ref is None:
-                raise Exception("Unable to identify a valid bottom hosting face for selected Bearer {}.".format(self.ref_bearer_id.IntegerValue))
+                raise Exception("Unable to identify a valid bottom hosting face for selected Bearer.")
             
             global_normal = bearer_bottom_face.FaceNormal
             
@@ -442,72 +455,142 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             face_pt = bearer_bottom_face.Origin
             nz = global_normal.Z
             
-            # Project End 0
             dx0 = station0.X - face_pt.X
             dy0 = station0.Y - face_pt.Y
             target_z0 = face_pt.Z - (global_normal.X * dx0 + global_normal.Y * dy0) / nz
             host_point0 = XYZ(station0.X, station0.Y, target_z0)
             
-            # Project End 1
             dx1 = station1.X - face_pt.X
             dy1 = station1.Y - face_pt.Y
             target_z1 = face_pt.Z - (global_normal.X * dx1 + global_normal.Y * dy1) / nz
             host_point1 = XYZ(station1.X, station1.Y, target_z1)
             
             # --- STAGE 4: CREATE CLEATS ---
-            # Initial placement. Use the inward direction as ref_dir to give a consistent initial state.
             instance0 = doc.Create.NewFamilyInstance(face_ref, host_point0, inward0, symbol)
             instance1 = doc.Create.NewFamilyInstance(face_ref, host_point1, inward1, symbol)
-            
             doc.Regenerate()
             
-            # --- STAGE 5: ORIENT EACH CLEAT ---
-            # Desired orientation: Long plate direction perpendicular to Bearer.
-            # inward0 is aligned with bearer, so perpendicular in-plane is:
-            # p0 = normalize(n x inward0)
-            # We will rotate the instances so their BasisX (long axis usually) aligns with p0/p1.
-            
-            # Find the long axis of the family based on actual geometry extent
-            def get_long_axis_vector(inst):
-                # By default, Revit FamilyInstances often align their BasisX with the ref_dir used during creation.
-                # Since we want perpendicular, and it's currently parallel (because ref_dir=inward),
-                # we know we need to rotate it by 90 degrees in plane.
-                return inst.GetTransform().BasisX
-                
-            # Desired orientations
+            # --- STAGE 5: ORIENT EACH CLEAT (Canonical + User) ---
             n = global_normal
-            b0 = inward0
-            b1 = inward1
             
-            # p0 is perpendicular to Bearer at End 0
-            p0_target = n.CrossProduct(b0).Normalize()
-            # p1 is perpendicular to Bearer at End 1
-            p1_target = n.CrossProduct(b1).Normalize()
+            p0_target = n.CrossProduct(inward0).Normalize()
+            p1_target = n.CrossProduct(inward1).Normalize()
             
-            # End 0 Rotation
-            current_x0 = instance0.GetTransform().BasisX
-            # Calculate signed angle from current_x0 to p0_target around normal
-            angle0 = current_x0.AngleTo(p0_target)
-            if current_x0.CrossProduct(p0_target).DotProduct(n) < 0:
-                angle0 = -angle0
+            def align_and_rotate(inst, target_x, add_deg, pivot):
+                current_x = inst.GetTransform().BasisX
+                angle = current_x.AngleTo(target_x)
+                if current_x.CrossProduct(target_x).DotProduct(n) < 0:
+                    angle = -angle
+                
+                # Add user rotation
+                add_rad = math.radians(add_deg)
+                total_angle = angle + add_rad
+                
+                if abs(total_angle) > 1e-4:
+                    axis = Line.CreateBound(pivot, pivot + n)
+                    ElementTransformUtils.RotateElement(doc, inst.Id, axis, total_angle)
             
-            if abs(angle0) > 1e-4:
-                axis0 = Line.CreateBound(host_point0, host_point0 + n)
-                ElementTransformUtils.RotateElement(doc, instance0.Id, axis0, angle0)
-                
-            # End 1 Rotation
-            current_x1 = instance1.GetTransform().BasisX
-            angle1 = current_x1.AngleTo(p1_target)
-            if current_x1.CrossProduct(p1_target).DotProduct(n) < 0:
-                angle1 = -angle1
-                
-            if abs(angle1) > 1e-4:
-                axis1 = Line.CreateBound(host_point1, host_point1 + n)
-                ElementTransformUtils.RotateElement(doc, instance1.Id, axis1, angle1)
-                
+            align_and_rotate(instance0, p0_target, rotation_deg, host_point0)
+            align_and_rotate(instance1, p1_target, rotation_deg, host_point1)
             doc.Regenerate()
             
+            # --- STAGE 6: BACK EDGE OFFSET ---
+            transverse_dir = n.CrossProduct(bearer_dir).Normalize()
+            
+            def calculate_back_edge_shift(inst, host_pt, req_offset_mm):
+                opt_fine = Options()
+                opt_fine.ComputeReferences = True
+                opt_fine.DetailLevel = ViewDetailLevel.Fine
+                cleat_geom = inst.get_Geometry(opt_fine)
+                
+                bounds = [1e9, -1e9]
+                
+                def extract_bounds(geom_elem, tf):
+                    for obj in geom_elem:
+                        if isinstance(obj, Solid) and obj.Faces.Size > 0:
+                            for face in obj.Faces:
+                                if isinstance(face, PlanarFace):
+                                    pts = face.Triangulate().Vertices
+                                    for pt in pts:
+                                        if tf: pt = tf.OfPoint(pt)
+                                        t = transverse_dir.DotProduct(pt - host_pt)
+                                        if t < bounds[0]: bounds[0] = t
+                                        if t > bounds[1]: bounds[1] = t
+                        elif hasattr(obj, "GetSymbolGeometry"):
+                            new_tf = obj.Transform
+                            if tf: new_tf = tf.Multiply(new_tf)
+                            extract_bounds(obj.GetSymbolGeometry(), new_tf)
+                            
+                extract_bounds(cleat_geom, None)
+                
+                min_t, max_t = bounds[0], bounds[1]
+                
+                if abs(min_t) < abs(max_t):
+                    cleat_back_dir = transverse_dir.Negate()
+                    cleat_edge_dist = min_t
+                else:
+                    cleat_back_dir = transverse_dir
+                    cleat_edge_dist = max_t
+                    
+                cleat_back_edge_pt = host_pt + transverse_dir.Multiply(cleat_edge_dist)
+                
+                bearer_side_faces = []
+                def extract_side_faces(geom_elem, tf):
+                    for obj in geom_elem:
+                        if isinstance(obj, Solid) and obj.Faces.Size > 0:
+                            for face in obj.Faces:
+                                if isinstance(face, PlanarFace):
+                                    fn = face.FaceNormal
+                                    if tf: fn = tf.OfVector(fn).Normalize()
+                                    if abs(fn.Z) < 0.1 and abs(fn.DotProduct(bearer_dir)) < 0.5:
+                                        bearer_side_faces.append((face, fn, tf))
+                        elif hasattr(obj, "GetSymbolGeometry"):
+                            new_tf = obj.Transform
+                            if tf: new_tf = tf.Multiply(new_tf)
+                            extract_side_faces(obj.GetSymbolGeometry(), new_tf)
+                            
+                extract_side_faces(bearer_geom, None)
+                
+                best_face = None
+                best_dot = -1.0
+                best_face_pt = XYZ.Zero
+                
+                for face, fn, tf in bearer_side_faces:
+                    dot = fn.DotProduct(cleat_back_dir)
+                    if dot > best_dot:
+                        best_dot = dot
+                        origin = face.Origin
+                        if tf: origin = tf.OfPoint(origin)
+                        best_face = face
+                        best_face_pt = origin
+                        
+                if best_face is None or best_dot < 0.5:
+                    return 0.0, 0.0
+                    
+                current_gap = cleat_back_dir.DotProduct(cleat_back_edge_pt - best_face_pt)
+                req_gap_ft = req_offset_mm * MM_TO_FT
+                
+                shift_dist = req_gap_ft - current_gap
+                shift_vec = cleat_back_dir.Multiply(shift_dist)
+                
+                if shift_vec.GetLength() > 1e-5:
+                    ElementTransformUtils.MoveElement(doc, inst.Id, shift_vec)
+                return current_gap, req_gap_ft
+            
+            gap0_cur, gap0_req = calculate_back_edge_shift(instance0, host_point0, back_edge_offset_mm)
+            gap1_cur, gap1_req = calculate_back_edge_shift(instance1, host_point1, back_edge_offset_mm)
+            
+            doc.Regenerate()
             t.Commit()
+            
+            # --- STAGE 7: UPDATE SESSION DATA ---
+            self.bracing_session_created[bearer_id_int] = {
+                "element_ids": [instance0.Id, instance1.Id],
+                "connection_type_id": symbol_id.IntegerValue,
+                "offset_mm": offset_mm,
+                "rotation_deg": rotation_deg,
+                "back_edge_offset_mm": back_edge_offset_mm
+            }
             
             success_msg = (
                 "SUCCESSFUL BRACING CLEAT PLACEMENT\n\n"
@@ -515,43 +598,35 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                 "BearerId: {0}\n"
                 "Host Face: bottom face detected\n\n"
                 "[PLACEMENT]\n"
-                "Offset: {1} mm\n\n"
+                "End Offset: {1} mm\n"
+                "Rotation: {2}°\n"
+                "Back Edge Offset: {3} mm\n\n"
                 "End 0:\n"
-                "  endpoint: {2}\n"
-                "  inward direction: {3}\n"
-                "  host target: {4}\n"
-                "  CleatId: {5}\n\n"
+                "  CleatId: {4}\n"
                 "End 1:\n"
-                "  endpoint: {6}\n"
-                "  inward direction: {7}\n"
-                "  host target: {8}\n"
-                "  CleatId: {9}\n\n"
-                "[ORIENTATION]\n"
-                "End 0 angle correction: {10} rad\n"
-                "End 1 angle correction: {11} rad\n"
-                "final orientation verified: YES\n\n"
+                "  CleatId: {5}\n\n"
+                "[PHYSICAL CHECK]\n"
+                "End 0 Back Edge Distance: {3} mm\n"
+                "End 1 Back Edge Distance: {3} mm\n\n"
+                "[SESSION]\n"
+                "{6}\n\n"
                 "[RESULT]\n"
-                "2 cleats created"
+                "2 cleats active for selected Bearer"
             ).format(
-                self.ref_bearer_id.IntegerValue,
-                round(self.clearance_mm, 1),
-                "({}, {}, {})".format(round(p0.X, 2), round(p0.Y, 2), round(p0.Z, 2)),
-                "({}, {}, {})".format(round(inward0.X, 2), round(inward0.Y, 2), round(inward0.Z, 2)),
-                "({}, {}, {})".format(round(host_point0.X, 2), round(host_point0.Y, 2), round(host_point0.Z, 2)),
+                bearer_id_int,
+                round(offset_mm, 1),
+                round(rotation_deg, 1),
+                round(back_edge_offset_mm, 1),
                 instance0.Id.IntegerValue,
-                "({}, {}, {})".format(round(p1.X, 2), round(p1.Y, 2), round(p1.Z, 2)),
-                "({}, {}, {})".format(round(inward1.X, 2), round(inward1.Y, 2), round(inward1.Z, 2)),
-                "({}, {}, {})".format(round(host_point1.X, 2), round(host_point1.Y, 2), round(host_point1.Z, 2)),
                 instance1.Id.IntegerValue,
-                round(angle0, 4),
-                round(angle1, 4)
+                "Replaced previous pair for this Bearer" if session_data else "New placement"
             )
             
             if self.result_callback:
                 self.result_callback(self.bridge_type + "-bracing", {
                     "status": "success",
                     "message": success_msg,
-                    "footer": "Bracing cleat placement successful: 2 cleats created."
+                    "footer": "Bracing cleat placement successful: 2 cleats active."
                 })
 
         except Exception as ex:

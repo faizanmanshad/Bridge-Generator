@@ -2,7 +2,7 @@
     "exception_type": "Exception", 
     "operation": "REQUEST_APPLY_BRACING_CONNECTION", 
     "main_beam_id": null, 
-    "connection_type_id": 442894, 
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 459, in _execute_apply_bracing_connection\n    instance0 = doc.Create.NewFamilyInstance(face_ref, host_point0, inward0, symbol)\nException: Family cannot be placed as hosted on an input face reference, because its FamilyPlacementType is not WorkPlaneBased\r\nParameter name: symbol\n", 
-    "exception_message": "Family cannot be placed as hosted on an input face reference, because its FamilyPlacementType is not WorkPlaneBased\r\nParameter name: symbol"
+    "connection_type_id": 1082844, 
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 587, in _execute_apply_bracing_connection\n    self.bracing_session_created[bearer_id_int] = {\nException: The referenced object is not valid, possibly because it has been deleted from the database, or its creation was undone.\n", 
+    "exception_message": "The referenced object is not valid, possibly because it has been deleted from the database, or its creation was undone."
 }
