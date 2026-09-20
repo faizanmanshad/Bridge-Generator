@@ -85,6 +85,11 @@ try:
 
     logger.info("Urbana Apply Connections runtime: {0}".format(revit_env_name))
 
+    import core.external_event_handler
+    import ui.ApplyConnectionsWindow
+    reload(core.external_event_handler)
+    reload(ui.ApplyConnectionsWindow)
+    
     from ui.ApplyConnectionsWindow import ApplyConnectionsWindow
     from core.external_event_handler import ApplyConnectionsExternalEventHandler
     from Autodesk.Revit.UI import ExternalEvent  # type: ignore

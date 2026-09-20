@@ -1,8 +1,8 @@
 {
-    "exception_type": "UnboundLocalError", 
+    "exception_type": "Exception", 
     "operation": "REQUEST_APPLY_BRACING_CONNECTION", 
     "main_beam_id": null, 
-    "connection_type_id": 1026026, 
-    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 810, in _execute_apply_bracing_connection\n    p_origin_final = diag_p_target_ref\nUnboundLocalError: Local variable 'diag_p_target_ref' referenced before assignment.\n", 
-    "exception_message": "Local variable 'diag_p_target_ref' referenced before assignment."
+    "connection_type_id": 442894, 
+    "traceback": "Traceback (most recent call last):\n  File \"D:\\All Revit\\19 Revit Plugins\\RevitExtensions\\Urbana.extension\\Urbana.tab\\BridgeGenerator.panel\\ApplyConnections.pushbutton\\core\\external_event_handler.py\", line 459, in _execute_apply_bracing_connection\n    instance0 = doc.Create.NewFamilyInstance(face_ref, host_point0, inward0, symbol)\nException: Family cannot be placed as hosted on an input face reference, because its FamilyPlacementType is not WorkPlaneBased\r\nParameter name: symbol\n", 
+    "exception_message": "Family cannot be placed as hosted on an input face reference, because its FamilyPlacementType is not WorkPlaneBased\r\nParameter name: symbol"
 }

@@ -717,101 +717,43 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Target Beam & Bearer Selection (Side by Side) -->
-                                <Grid Margin="0,0,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="10"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Left Column: Target Beam Type -->
-                                    <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Stretch">
-                                        <StackPanel>
-                                            <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
-                                            <Button x:Name="BtnSelectBracingBeam_Concrete"
-                                                    Content="⊙  Select Reference Beam"
-                                                    Style="{StaticResource BtnSelect}"
-                                                    HorizontalAlignment="Stretch"
-                                                    Margin="0,0,0,10"/>
-                                            <Border x:Name="SelectedBracingBeamCard_Concrete"
-                                                    Style="{StaticResource BeamInfoCard}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Reference Beam"
-                                                               FontSize="9" FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextMuted}"
-                                                               Margin="0,0,0,3"/>
-                                                    <TextBlock x:Name="SelectedBracingBeamLabel_Concrete"
-                                                               Text="— no beam selected —"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource NavyPrimary}"
-                                                               FontWeight="SemiBold"
-                                                               TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <!-- Parameter Selection -->
-                                            <TextBlock Text="Beam Width Parameter" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
-                                            <ComboBox x:Name="BracingBeamWidthCombo_Concrete"
-                                                      Style="{StaticResource UrbanaCombo}"
-                                                      Margin="0,0,0,10"/>
-
-                                            <TextBlock Text="Flange Edge Offset (mm)" Style="{StaticResource SectionLabel}"/>
-                                            <TextBox x:Name="BracingFlangeOffset_Concrete"
-                                                     Text="30.0"
-                                                     Padding="4"
-                                                     Margin="0,0,0,0"/>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <!-- Right Column: Target Bearer Type -->
-                                    <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Stretch">
-                                        <StackPanel>
-                                            <TextBlock Text="Target Bearer Type" Style="{StaticResource SectionLabel}"/>
-                                            <Button x:Name="BtnSelectBracingBearer_Concrete"
-                                                    Content="⊙  Select Reference Bearer"
-                                                    Style="{StaticResource BtnSelect}"
-                                                    HorizontalAlignment="Stretch"
-                                                    Margin="0,0,0,10"/>
-                                            <Border x:Name="SelectedBracingBearerCard_Concrete"
-                                                    Style="{StaticResource BeamInfoCard}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Reference Bearer"
-                                                               FontSize="9" FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextMuted}"
-                                                               Margin="0,0,0,3"/>
-                                                    <TextBlock x:Name="SelectedBracingBearerLabel_Concrete"
-                                                               Text="— no bearer selected —"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource NavyPrimary}"
-                                                               FontWeight="SemiBold"
-                                                               TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                            </Border>
-                                            
-                                            <Button x:Name="BtnSelectBracingFace_Concrete"
-                                                    Content="⊙  Select Bearer Bottom Face"
-                                                    Style="{StaticResource BtnSelect}"
-                                                    HorizontalAlignment="Stretch"
-                                                    Margin="0,10,0,10"/>
-                                            <Border x:Name="SelectedBracingFaceCard_Concrete"
-                                                    Style="{StaticResource BeamInfoCard}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Bearer Face"
-                                                               FontSize="9" FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextMuted}"
-                                                               Margin="0,0,0,3"/>
-                                                    <TextBlock x:Name="SelectedBracingFaceLabel_Concrete"
-                                                               Text="— no face selected —"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource NavyPrimary}"
-                                                               FontWeight="SemiBold"
-                                                               TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-                                    </Border>
-                                </Grid>
+                                <!-- Placement Bearer & Clearance Selection -->
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,10">
+                                    <StackPanel>
+                                        <TextBlock Text="Placement Bearer" Style="{StaticResource SectionLabel}"/>
+                                        <Button x:Name="BtnSelectBracingBearer_Concrete"
+                                                Content="⊙  Select Bearer / End"
+                                                Style="{StaticResource BtnSelect}"
+                                                HorizontalAlignment="Left"
+                                                Width="200"
+                                                Margin="0,0,0,10"/>
+                                                
+                                        <!-- Selected Bearer diagnostic card -->
+                                        <Border x:Name="SelectedBracingBearerCard_Concrete"
+                                                Style="{StaticResource BeamInfoCard}">
+                                            <StackPanel>
+                                                <TextBlock Text="Selected Bearer"
+                                                           FontSize="9" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextMuted}"
+                                                           Margin="0,0,0,3"/>
+                                                <TextBlock x:Name="SelectedBracingBearerLabel_Concrete"
+                                                           Text="— no bearer selected —"
+                                                           FontSize="11"
+                                                           Foreground="{StaticResource NavyPrimary}"
+                                                           FontWeight="SemiBold"
+                                                           TextWrapping="Wrap"/>
+                                            </StackPanel>
+                                        </Border>
+                                        
+                                        <TextBlock Text="Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                        <TextBox x:Name="BracingFlangeOffset_Concrete"
+                                                 Text="30.0"
+                                                 Padding="4"
+                                                 Width="200"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="0,0,0,0"/>
+                                    </StackPanel>
+                                </Border>
 
                                 <!-- Status / Result -->
                                 <Border Style="{StaticResource Card}">
@@ -820,7 +762,7 @@
                                         <Border x:Name="ResultCard_Bracing_Concrete"
                                                 Style="{StaticResource StatusCard}">
                                             <TextBlock x:Name="ResultText_Bracing_Concrete"
-                                                       Text="Ready. Select a custom plate type, a Reference Beam, and a Reference Bearer, then click Apply."
+                                                       Text="Ready. Select a custom plate type and a Reference Bearer, then click Apply."
                                                        FontSize="11"
                                                        Foreground="{StaticResource TextSecondary}"
                                                        TextWrapping="Wrap"/>
@@ -835,7 +777,7 @@
                                             </Grid.ColumnDefinitions>
                                             <Button Grid.Column="0"
                                                     x:Name="BtnApplyBracing_Concrete"
-                                                    Content="▶   Apply Bracing Connections"
+                                                    Content="▶   Apply Bracing Cleats"
                                                     Style="{StaticResource BtnRun}"
                                                     Width="270"/>
                                             <StackPanel Grid.Column="2"

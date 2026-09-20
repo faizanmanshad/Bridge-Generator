@@ -94,6 +94,33 @@ def pick_structural_framing(uidoc):
         raise
 
 
+def pick_structural_framing_with_point(uidoc, prompt_text="Select a Structural Framing element"):
+    """Prompt the user to select ONE Structural Framing element and capture the click point.
+
+    Returns:
+        (element, point, False)  — success
+        (None,    None,  True)   — user cancelled
+    """
+    sel_filter  = StructuralFramingFilter()
+
+    try:
+        reference = uidoc.Selection.PickObject(
+            ObjectType.Element,
+            sel_filter,
+            prompt_text,
+        )
+        element = uidoc.Document.GetElement(reference.ElementId)
+        return element, reference.GlobalPoint, False
+
+    except OperationCanceledException:
+        # User pressed Escape — clean, expected cancellation
+        return None, None, True
+
+    except Exception:
+        # Re-raise unexpected errors so the caller can log and surface them
+        raise
+
+
 def describe_element(element):
     """Return a concise display string for a structural framing element.
 
