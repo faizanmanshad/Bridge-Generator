@@ -476,8 +476,8 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             # --- STAGE 5: ORIENT EACH CLEAT (Canonical + User) ---
             n = global_normal
             
-            p0_target = n.CrossProduct(inward0).Normalize()
-            p1_target = n.CrossProduct(inward1).Normalize()
+            # Use the same canonical transverse direction for both cleats so they sit on the same side of the bearer.
+            transverse_target = n.CrossProduct(bearer_dir).Normalize()
             
             def align_and_rotate(inst, target_x, add_deg, pivot):
                 current_x = inst.GetTransform().BasisX
@@ -493,8 +493,17 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                     axis = Line.CreateBound(pivot, pivot + n)
                     ElementTransformUtils.RotateElement(doc, inst.Id, axis, total_angle)
             
-            align_and_rotate(instance0, p0_target, rotation_deg, host_point0)
-            align_and_rotate(instance1, p1_target, rotation_deg, host_point1)
+            align_and_rotate(instance0, transverse_target, rotation_deg, host_point0)
+            align_and_rotate(instance1, transverse_target, rotation_deg, host_point1)
+            
+            # Attempt to mirror End 1 longitudinally if the family permits it, to satisfy the "mirrored" requirement
+            # without breaking the transverse alignment (same side of bearer).
+            try:
+                if instance1.CanFlipHand:
+                    instance1.flipHand()
+            except Exception:
+                pass
+                
             doc.Regenerate()
             
             # --- STAGE 6: BACK EDGE OFFSET ---
