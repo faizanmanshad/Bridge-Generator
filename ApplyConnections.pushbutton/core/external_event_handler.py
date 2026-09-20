@@ -421,6 +421,8 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                 best_face = None
                 best_ref = None
                 best_z = 1e9
+                best_gn = None
+                best_gp = None
                 for obj in geom_elem:
                     if isinstance(obj, Solid) and obj.Faces.Size > 0:
                         for face in obj.Faces:
@@ -434,25 +436,26 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                                         best_z = origin.Z
                                         best_face = face
                                         best_ref = face.Reference
+                                        best_gn = normal
+                                        best_gp = origin
                     elif hasattr(obj, "GetSymbolGeometry"):
                         new_tf = obj.Transform
                         if tf: new_tf = tf.Multiply(new_tf)
-                        f, r, z = find_bottom_face(obj.GetSymbolGeometry(), new_tf)
+                        f, r, z, gn, gp = find_bottom_face(obj.GetSymbolGeometry(), new_tf)
                         if z < best_z:
                             best_z = z
                             best_face = f
                             best_ref = r
-                return best_face, best_ref, best_z
+                            best_gn = gn
+                            best_gp = gp
+                return best_face, best_ref, best_z, best_gn, best_gp
                 
-            bearer_bottom_face, face_ref, lowest_z = find_bottom_face(bearer_geom, None)
+            bearer_bottom_face, face_ref, lowest_z, global_normal, face_pt = find_bottom_face(bearer_geom, None)
             
-            if bearer_bottom_face is None or face_ref is None:
+            if bearer_bottom_face is None or face_ref is None or global_normal is None:
                 raise Exception("Unable to identify a valid bottom hosting face for selected Bearer.")
             
-            global_normal = bearer_bottom_face.FaceNormal
-            
             # --- STAGE 3: PROJECT STATIONS TO BOTTOM FACE ---
-            face_pt = bearer_bottom_face.Origin
             nz = global_normal.Z
             
             dx0 = station0.X - face_pt.X
@@ -542,7 +545,7 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                                 if isinstance(face, PlanarFace):
                                     fn = face.FaceNormal
                                     if tf: fn = tf.OfVector(fn).Normalize()
-                                    if abs(fn.Z) < 0.1 and abs(fn.DotProduct(bearer_dir)) < 0.5:
+                                    if abs(fn.DotProduct(global_normal)) < 0.3 and abs(fn.DotProduct(bearer_dir)) < 0.5:
                                         bearer_side_faces.append((face, fn, tf))
                         elif hasattr(obj, "GetSymbolGeometry"):
                             new_tf = obj.Transform
