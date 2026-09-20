@@ -1246,66 +1246,30 @@
                                     </StackPanel>
                                 </Border>
 
-                                <!-- Target Beam & Bearer Selection (Side by Side) -->
-                                <Grid Margin="0,0,0,0">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*"/>
-                                        <ColumnDefinition Width="10"/>
-                                        <ColumnDefinition Width="*"/>
-                                    </Grid.ColumnDefinitions>
-
-                                    <!-- Left Column: Target Beam Type -->
-                                    <Border Grid.Column="0" Style="{StaticResource Card}" VerticalAlignment="Stretch">
-                                        <StackPanel>
-                                            <TextBlock Text="Target Beam Type" Style="{StaticResource SectionLabel}"/>
-                                            <Button x:Name="BtnSelectBracingBeam_Timber"
-                                                    Content="⊙  Select Reference Beam"
-                                                    Style="{StaticResource BtnSelect}"
-                                                    HorizontalAlignment="Stretch"
-                                                    Margin="0,0,0,10"/>
-                                            <Border x:Name="SelectedBracingBeamCard_Timber"
-                                                    Style="{StaticResource BeamInfoCard}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Reference Beam"
-                                                               FontSize="9" FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextMuted}"
-                                                               Margin="0,0,0,3"/>
-                                                    <TextBlock x:Name="SelectedBracingBeamLabel_Timber"
-                                                               Text="— no beam selected —"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource NavyPrimary}"
-                                                               FontWeight="SemiBold"
-                                                               TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                            </Border>
-
-                                            <!-- Parameter Selection -->
-                                            <TextBlock Text="Beam Width Parameter" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
-                                            <ComboBox x:Name="BracingBeamWidthCombo_Timber"
-                                                      Style="{StaticResource UrbanaCombo}"
-                                                      Margin="0,0,0,10"/>
-
-                                            <TextBlock Text="Flange Edge Offset (mm)" Style="{StaticResource SectionLabel}"/>
-                                            <TextBox x:Name="BracingFlangeOffset_Timber"
-                                                     Text="30.0"
-                                                     Padding="4"
-                                                     Margin="0,0,0,0"/>
-                                        </StackPanel>
-                                    </Border>
-
-                                    <!-- Right Column: Target Bearer Type -->
-                                    <Border Grid.Column="2" Style="{StaticResource Card}" VerticalAlignment="Stretch">
-                                        <StackPanel>
-                                            <TextBlock Text="Target Bearer Type" Style="{StaticResource SectionLabel}"/>
+                                <!-- Placement Bearer & Clearance Selection -->
+                                <Border Style="{StaticResource Card}" Margin="0,0,0,10">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="10"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <!-- Left Column: Placement Bearer & Offset -->
+                                        <StackPanel Grid.Column="0">
+                                            <TextBlock Text="Placement Bearer" Style="{StaticResource SectionLabel}"/>
                                             <Button x:Name="BtnSelectBracingBearer_Timber"
-                                                    Content="⊙  Select Reference Bearer"
+                                                    Content="⊙  Select Bearer"
                                                     Style="{StaticResource BtnSelect}"
-                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalAlignment="Left"
+                                                    Width="200"
                                                     Margin="0,0,0,10"/>
+                                                    
+                                            <!-- Selected Bearer diagnostic card -->
                                             <Border x:Name="SelectedBracingBearerCard_Timber"
                                                     Style="{StaticResource BeamInfoCard}">
                                                 <StackPanel>
-                                                    <TextBlock Text="Reference Bearer"
+                                                    <TextBlock Text="Selected Bearer"
                                                                FontSize="9" FontWeight="SemiBold"
                                                                Foreground="{StaticResource TextMuted}"
                                                                Margin="0,0,0,3"/>
@@ -1318,29 +1282,42 @@
                                                 </StackPanel>
                                             </Border>
                                             
-                                            <Button x:Name="BtnSelectBracingFace_Timber"
-                                                    Content="⊙  Select Bearer Bottom Face"
-                                                    Style="{StaticResource BtnSelect}"
-                                                    HorizontalAlignment="Stretch"
-                                                    Margin="0,10,0,10"/>
-                                            <Border x:Name="SelectedBracingFaceCard_Timber"
-                                                    Style="{StaticResource BeamInfoCard}">
-                                                <StackPanel>
-                                                    <TextBlock Text="Bearer Face"
-                                                               FontSize="9" FontWeight="SemiBold"
-                                                               Foreground="{StaticResource TextMuted}"
-                                                               Margin="0,0,0,3"/>
-                                                    <TextBlock x:Name="SelectedBracingFaceLabel_Timber"
-                                                               Text="— no face selected —"
-                                                               FontSize="11"
-                                                               Foreground="{StaticResource NavyPrimary}"
-                                                               FontWeight="SemiBold"
-                                                               TextWrapping="Wrap"/>
-                                                </StackPanel>
-                                            </Border>
+                                            <TextBlock Text="Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                            <TextBox x:Name="BracingFlangeOffset_Timber"
+                                                     Text="150"
+                                                     Padding="4"
+                                                     Width="200"
+                                                     HorizontalAlignment="Left"
+                                                     Margin="0,0,0,0"/>
+                                            <TextBlock Text="Distance from bearer end. Use points for decimals." 
+                                                       FontSize="10" Foreground="#888888" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                         </StackPanel>
-                                    </Border>
-                                </Grid>
+                                        
+                                        <!-- Right Column: Rotation & Back Edge Offset -->
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="Rotation" Style="{StaticResource SectionLabel}"/>
+                                            <ComboBox x:Name="BracingRotation_Timber"
+                                                      Style="{StaticResource UrbanaCombo}"
+                                                      Width="200"
+                                                      HorizontalAlignment="Left"
+                                                      Margin="0,0,0,10"
+                                                      SelectedIndex="3">
+                                                <ComboBoxItem Content="90°"/>
+                                                <ComboBoxItem Content="180°"/>
+                                                <ComboBoxItem Content="270°"/>
+                                                <ComboBoxItem Content="360°"/>
+                                            </ComboBox>
+                                            
+                                            <TextBlock Text="Back Edge Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
+                                            <TextBox x:Name="BracingBackEdgeOffset_Timber"
+                                                     Text="5.0"
+                                                     Padding="4"
+                                                     Width="200"
+                                                     HorizontalAlignment="Left"
+                                                     Margin="0,0,0,0"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
 
                                 <!-- Status / Result -->
                                 <Border Style="{StaticResource Card}">

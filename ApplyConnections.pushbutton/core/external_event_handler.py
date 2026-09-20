@@ -341,10 +341,6 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
         if not hasattr(self, "bracing_session_created"):
             self.bracing_session_created = {}
 
-        if self.bridge_type == "timber":
-            self._execute_apply_bracing_connection_timber(doc)
-            return
-            
         ref_bearer = doc.GetElement(self.ref_bearer_id) if self.ref_bearer_id else None
 
         if not ref_bearer:

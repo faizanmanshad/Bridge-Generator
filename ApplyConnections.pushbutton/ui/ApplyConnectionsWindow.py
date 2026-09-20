@@ -866,115 +866,49 @@ class ApplyConnectionsWindow(object):
             self._set_footer(msg)
             return
 
-        if bridge_type == BRIDGE_CONCRETE:
-            bearer_id = self._bracing_bearer_id.get(bridge_type)
-            point = self._bracing_face_point.get(bridge_type)
-            
-            if bearer_id is None or point is None:
-                msg = "No Bearer selected. Click 'Select Bearer' first."
-                self._set_bracing_result(bridge_type, msg, error=True)
-                self._set_footer(msg)
-                return
-                
-            offset_tb = self._bracing_flange_offset_concrete
-            try:
-                user_offset_mm = float(offset_tb.Text)
-                if user_offset_mm < 0:
-                    raise ValueError("Offset must be positive.")
-            except Exception:
-                msg = "Invalid Offset. Please enter a valid number (e.g., 30.0)."
-                self._set_bracing_result(bridge_type, msg, error=True)
-                self._set_footer(msg)
-                return
-                
-            rotation_cb = self._window.FindName("BracingRotation_Concrete")
-            rotation_str = "360"
-            if rotation_cb and hasattr(rotation_cb, "Text") and rotation_cb.Text:
-                rotation_str = rotation_cb.Text.replace(u"°", "")
-            try:
-                user_rotation_deg = float(rotation_str)
-            except Exception:
-                user_rotation_deg = 360.0
-                
-            back_edge_tb = self._window.FindName("BracingBackEdgeOffset_Concrete")
-            try:
-                user_back_edge_mm = float(back_edge_tb.Text)
-            except Exception:
-                msg = "Invalid Back Edge Offset. Please enter a valid number (e.g., 5.0)."
-                self._set_bracing_result(bridge_type, msg, error=True)
-                self._set_footer(msg)
-                return
-
-            self._set_bracing_result(bridge_type, "Placing custom Bracing Connection plate...", neutral=True)
-            self._set_footer("Executing physical geometry solver...")
-            self._update_ui()
-
-            if self._handler and self._ext_event:
-                self._handler.request_type        = REQUEST_APPLY_BRACING_CONNECTION
-                self._handler.bridge_type         = bridge_type
-                self._handler.connection_type_id  = symbol_id
-                self._handler.ref_bearer_id       = bearer_id
-                self._handler.click_point         = point
-                self._handler.clearance_mm        = user_offset_mm
-                self._handler.rotation_deg        = user_rotation_deg
-                self._handler.back_edge_offset_mm = user_back_edge_mm
-                
-                self._handler.ref_beam_id         = None
-                self._handler.stable_face_ref     = None
-                self._handler.face_point          = None
-                self._handler.width_param_name    = None
-                
-                self._ext_event.Raise()
-            return
-
-        # Timber fallback
-        # Reintroduce single beam reference for geometry calculation
-        beam_id = self._bracing_beam_id.get(bridge_type)
-        if beam_id is None:
-            msg = "No Reference Beam selected. Click 'Select Reference Beam' first."
-            self._set_bracing_result(bridge_type, msg, error=True)
-            self._set_footer(msg)
-            return
-
         bearer_id = self._bracing_bearer_id.get(bridge_type)
-        if bearer_id is None:
-            msg = "No Reference Bearer selected. Click 'Select Reference Bearer' first."
-            self._set_bracing_result(bridge_type, msg, error=True)
-            self._set_footer(msg)
-            return
-
-        stable_ref = self._bracing_face_stable_ref.get(bridge_type)
+        # Use an empty point if click point isn't needed, but keeping for compatibility
         point = self._bracing_face_point.get(bridge_type)
-        if stable_ref is None or point is None:
-            msg = "No Bearer Face selected. Click 'Select Bearer Bottom Face' first."
-            self._set_bracing_result(bridge_type, msg, error=True)
-            self._set_footer(msg)
-            return
-            
-        # Validate Parameter Selection
-        width_combo = self._bracing_beam_width_combo_timber
-        if width_combo is None or width_combo.SelectedIndex < 0 or width_combo.SelectedItem == "(No numeric parameters)":
-            msg = "Please select a valid Beam Width Parameter."
-            self._set_bracing_result(bridge_type, msg, error=True)
-            self._set_footer(msg)
-            return
-            
-        param_name = width_combo.SelectedItem
         
-        # Validate User Offset
-        offset_tb = self._bracing_flange_offset_timber
+        if bearer_id is None:
+            msg = "No Bearer selected. Click 'Select Bearer' first."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+            
+        suffix = "Concrete" if bridge_type == BRIDGE_CONCRETE else "Timber"
+            
+        offset_tb = self._window.FindName("BracingFlangeOffset_" + suffix)
         try:
             user_offset_mm = float(offset_tb.Text)
             if user_offset_mm < 0:
                 raise ValueError("Offset must be positive.")
         except Exception:
-            msg = "Invalid Flange Edge Offset. Please enter a valid number (e.g., 30.0)."
+            msg = "Invalid Offset. Please enter a valid number (e.g., 150.0)."
+            self._set_bracing_result(bridge_type, msg, error=True)
+            self._set_footer(msg)
+            return
+            
+        rotation_cb = self._window.FindName("BracingRotation_" + suffix)
+        rotation_str = "360"
+        if rotation_cb and hasattr(rotation_cb, "Text") and rotation_cb.Text:
+            rotation_str = rotation_cb.Text.replace(u"°", "")
+        try:
+            user_rotation_deg = float(rotation_str)
+        except Exception:
+            user_rotation_deg = 360.0
+            
+        back_edge_tb = self._window.FindName("BracingBackEdgeOffset_" + suffix)
+        try:
+            user_back_edge_mm = float(back_edge_tb.Text)
+        except Exception:
+            msg = "Invalid Back Edge Offset. Please enter a valid number (e.g., 5.0)."
             self._set_bracing_result(bridge_type, msg, error=True)
             self._set_footer(msg)
             return
 
         self._set_bracing_result(bridge_type, "Placing custom Bracing Connection plate...", neutral=True)
-        self._set_footer("Executing single face-based placement with lateral offset...")
+        self._set_footer("Executing physical geometry solver...")
         self._update_ui()
 
         if self._handler and self._ext_event:
@@ -982,20 +916,19 @@ class ApplyConnectionsWindow(object):
             self._handler.bridge_type         = bridge_type
             self._handler.connection_type_id  = symbol_id
             self._handler.ref_bearer_id       = bearer_id
-            self._handler.ref_beam_id         = beam_id
+            self._handler.click_point         = point
+            self._handler.clearance_mm        = user_offset_mm
+            self._handler.rotation_deg        = user_rotation_deg
+            self._handler.back_edge_offset_mm = user_back_edge_mm
             
-            # Send the stable face reference and point as well
-            self._handler.stable_face_ref     = stable_ref
-            self._handler.face_point          = point
+            self._handler.ref_beam_id         = None
+            self._handler.stable_face_ref     = None
+            self._handler.face_point          = None
+            self._handler.width_param_name    = None
             
-            # Send width parameter info
-            self._handler.beam_width_param_name = param_name
-            self._handler.user_flange_offset_mm = user_offset_mm
-
             self._ext_event.Raise()
         else:
             self._set_bracing_result(bridge_type, "Internal error: ExternalEvent not initialized.", error=True)
-
 
     def _get_bb_connection_type_id(self, bridge_type):
         """Return the ElementId of the selected Bearer-Beam connection type, or None.
