@@ -2,957 +2,949 @@
     "bearer_type_name": "Unknown", 
     "pairs": [
         {
-            "reason": "Bearer Start too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576556", 
-            "bearer_id": 1576556, 
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325508", 
+            "bearer_id": 1325508, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325550, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1556958 / Bearer 1576556", 
-            "bearer_id": 1576556, 
+            "pair_name": "Beam 1325550 / Bearer 1325508", 
+            "bearer_id": 1325508, 
             "valid_joint": "YES", 
-            "beam_id": 1556958, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325550, 
+            "dist_mm": 3.9300000000000002, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576558", 
-            "bearer_id": 1576558, 
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325510", 
+            "bearer_id": 1325510, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325550, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1556958 / Bearer 1576558", 
-            "bearer_id": 1576558, 
+            "pair_name": "Beam 1325550 / Bearer 1325510", 
+            "bearer_id": 1325510, 
             "valid_joint": "YES", 
-            "beam_id": 1556958, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325550, 
+            "dist_mm": 3.9300000000000002, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576560", 
-            "bearer_id": 1576560, 
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325512", 
+            "bearer_id": 1325512, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325550, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1556958 / Bearer 1576560", 
-            "bearer_id": 1576560, 
+            "pair_name": "Beam 1325550 / Bearer 1325512", 
+            "bearer_id": 1325512, 
             "valid_joint": "YES", 
-            "beam_id": 1556958, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325550, 
+            "dist_mm": 3.9300000000000002, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (4513.5 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576562", 
-            "bearer_id": 1576562, 
+            "reason": "Bearer Start too far from beam (4511.2 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325556", 
+            "bearer_id": 1325556, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 4513.5299999999997, 
+            "beam_id": 1325550, 
+            "dist_mm": 4511.1999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (3872.7 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576562", 
-            "bearer_id": 1576562, 
+            "reason": "Bearer End too far from beam (3870.0 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325556", 
+            "bearer_id": 1325556, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 3872.7199999999998, 
+            "beam_id": 1325550, 
+            "dist_mm": 3870.0, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (3065.1 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576564", 
-            "bearer_id": 1576564, 
+            "reason": "Bearer Start too far from beam (3061.7 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325558", 
+            "bearer_id": 1325558, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 3065.1399999999999, 
+            "beam_id": 1325550, 
+            "dist_mm": 3061.71, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2005.3 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576564", 
-            "bearer_id": 1576564, 
+            "reason": "Bearer End too far from beam (2000.0 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325558", 
+            "bearer_id": 1325558, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 2005.25, 
+            "beam_id": 1325550, 
+            "dist_mm": 2000.0, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (2326.4 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576566", 
-            "bearer_id": 1576566, 
+            "reason": "Bearer Start too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325560", 
+            "bearer_id": 1325560, 
             "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 2326.3699999999999, 
+            "beam_id": 1325550, 
+            "dist_mm": 2321.8400000000001, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (194.8 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 194.78, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (8235.2 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576568", 
-            "bearer_id": 1576568, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 8235.1900000000005, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (7902.2 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576568", 
-            "bearer_id": 1576568, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 7902.1700000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (6448.4 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576570", 
-            "bearer_id": 1576570, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 6448.3999999999996, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (6017.3 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576570", 
-            "bearer_id": 1576570, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 6017.3000000000002, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (4738.4 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 4738.4200000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4132.6 mm).", 
-            "pair_name": "Beam 1556958 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556958, 
-            "dist_mm": 4132.6300000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "pair_name": "Beam 1556961 / Bearer 1576556", 
-            "bearer_id": 1576556, 
+            "pair_name": "Beam 1325550 / Bearer 1325560", 
+            "bearer_id": 1325560, 
             "valid_joint": "YES", 
-            "beam_id": 1556961, 
-            "dist_mm": 146.03999999999999, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325550, 
+            "dist_mm": 130.06, 
             "bearer_end_tested": "End"
         }, 
         {
-            "pair_name": "Beam 1556961 / Bearer 1576558", 
-            "bearer_id": 1576558, 
+            "reason": "Bearer Start too far from beam (8233.2 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325550, 
+            "dist_mm": 8233.2000000000007, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (7900.1 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325550, 
+            "dist_mm": 7900.1000000000004, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (6446.3 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325550, 
+            "dist_mm": 6446.3000000000002, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (6015.0 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325550, 
+            "dist_mm": 6015.04, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (4736.1 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325550, 
+            "dist_mm": 4736.1300000000001, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (4130.0 mm).", 
+            "pair_name": "Beam 1325550 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325550, 
+            "dist_mm": 4130.0, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325553 / Bearer 1325508", 
+            "bearer_id": 1325508, 
             "valid_joint": "YES", 
-            "beam_id": 1556961, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325553, 
+            "dist_mm": 3.9300000000000002, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576558", 
-            "bearer_id": 1576558, 
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325508", 
+            "bearer_id": 1325508, 
             "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325553, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "pair_name": "Beam 1556961 / Bearer 1576560", 
-            "bearer_id": 1576560, 
+            "pair_name": "Beam 1325553 / Bearer 1325510", 
+            "bearer_id": 1325510, 
             "valid_joint": "YES", 
-            "beam_id": 1556961, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325553, 
+            "dist_mm": 3.9300000000000002, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576560", 
-            "bearer_id": 1576560, 
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325510", 
+            "bearer_id": 1325510, 
             "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325553, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (3872.7 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 3872.7199999999998, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4513.5 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 4513.5299999999997, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2005.3 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 2005.25, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (3065.1 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 3065.1399999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (194.8 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 194.78, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2326.4 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 2326.3699999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (7902.2 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576568", 
-            "bearer_id": 1576568, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 7902.1700000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (8235.2 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576568", 
-            "bearer_id": 1576568, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 8235.1900000000005, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (6017.3 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576570", 
-            "bearer_id": 1576570, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 6017.3000000000002, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (6448.4 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576570", 
-            "bearer_id": 1576570, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 6448.3999999999996, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (4132.6 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 4132.6300000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4738.4 mm).", 
-            "pair_name": "Beam 1556961 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556961, 
-            "dist_mm": 4738.4200000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (4540.7 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 4540.7399999999998, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (3904.4 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 3904.3899999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (3076.0 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 3076.02, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2021.8 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2021.8399999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2326.5 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2326.5100000000002, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (196.5 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 196.5, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2322.7 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2322.73, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "pair_name": "Beam 1556976 / Bearer 1576562", 
-            "bearer_id": 1576562, 
+            "pair_name": "Beam 1325553 / Bearer 1325512", 
+            "bearer_id": 1325512, 
             "valid_joint": "YES", 
-            "beam_id": 1556976, 
-            "dist_mm": 145.05000000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2322.7 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2322.73, 
+            "beam_id": 1325553, 
+            "dist_mm": 3.9300000000000002, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1556976 / Bearer 1576564", 
-            "bearer_id": 1576564, 
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (3870.0 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325556", 
+            "bearer_id": 1325556, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 3870.0, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (4511.2 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325556", 
+            "bearer_id": 1325556, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 4511.1999999999998, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2000.0 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 2000.0, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (3061.7 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 3061.71, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325553 / Bearer 1325560", 
+            "bearer_id": 1325560, 
             "valid_joint": "YES", 
-            "beam_id": 1556976, 
-            "dist_mm": 145.05000000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2322.7 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2322.73, 
+            "beam_id": 1325553, 
+            "dist_mm": 130.06, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1556976 / Bearer 1576566", 
-            "bearer_id": 1576566, 
+            "reason": "Bearer End too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325560", 
+            "bearer_id": 1325560, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 2321.8400000000001, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (7900.1 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 7900.1000000000004, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (8233.2 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 8233.2000000000007, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (6015.0 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 6015.04, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (6446.3 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 6446.3000000000002, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (4130.0 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 4130.0, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (4736.1 mm).", 
+            "pair_name": "Beam 1325553 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325553, 
+            "dist_mm": 4736.1300000000001, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (4537.1 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 4537.1400000000003, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (3900.2 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 3900.21, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (3071.6 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 3071.5999999999999, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2015.1 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 2015.1099999999999, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 2321.8400000000001, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325598 / Bearer 1325512", 
+            "bearer_id": 1325512, 
             "valid_joint": "YES", 
-            "beam_id": 1556976, 
-            "dist_mm": 145.05000000000001, 
+            "beam_id": 1325598, 
+            "dist_mm": 130.08000000000001, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (4540.7 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576568", 
-            "bearer_id": 1576568, 
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325556", 
+            "bearer_id": 1325556, 
             "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 4540.7399999999998, 
+            "beam_id": 1325598, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (3904.4 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576568", 
-            "bearer_id": 1576568, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 3904.3899999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (3076.0 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576570", 
-            "bearer_id": 1576570, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 3076.02, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2021.8 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576570", 
-            "bearer_id": 1576570, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2021.8399999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2326.5 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 2326.5100000000002, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (196.5 mm).", 
-            "pair_name": "Beam 1556976 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556976, 
-            "dist_mm": 196.5, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (3904.4 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 3904.3899999999999, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4540.7 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 4540.7399999999998, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2021.8 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2021.8399999999999, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (3076.0 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 3076.02, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (196.5 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 196.5, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2326.5 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2326.5100000000002, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "pair_name": "Beam 1556979 / Bearer 1576562", 
-            "bearer_id": 1576562, 
+            "pair_name": "Beam 1325598 / Bearer 1325556", 
+            "bearer_id": 1325556, 
             "valid_joint": "YES", 
-            "beam_id": 1556979, 
-            "dist_mm": 145.05000000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2322.7 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2322.73, 
+            "beam_id": 1325598, 
+            "dist_mm": 3.7999999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "pair_name": "Beam 1556979 / Bearer 1576564", 
-            "bearer_id": 1576564, 
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325598 / Bearer 1325558", 
+            "bearer_id": 1325558, 
             "valid_joint": "YES", 
-            "beam_id": 1556979, 
-            "dist_mm": 145.05000000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2322.7 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2322.73, 
+            "beam_id": 1325598, 
+            "dist_mm": 3.7999999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "pair_name": "Beam 1556979 / Bearer 1576566", 
-            "bearer_id": 1576566, 
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325560", 
+            "bearer_id": 1325560, 
+            "valid_joint": "NO", 
+            "beam_id": 1325598, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325598 / Bearer 1325560", 
+            "bearer_id": 1325560, 
             "valid_joint": "YES", 
-            "beam_id": 1556979, 
-            "dist_mm": 145.05000000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2322.7 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2322.73, 
+            "beam_id": 1325598, 
+            "dist_mm": 3.7999999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (3904.4 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576568", 
-            "bearer_id": 1576568, 
+            "reason": "Bearer Start too far from beam (4537.1 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325604", 
+            "bearer_id": 1325604, 
             "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 3904.3899999999999, 
+            "beam_id": 1325598, 
+            "dist_mm": 4537.1400000000003, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (4540.7 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576568", 
-            "bearer_id": 1576568, 
+            "reason": "Bearer End too far from beam (3900.2 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325604", 
+            "bearer_id": 1325604, 
             "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 4540.7399999999998, 
+            "beam_id": 1325598, 
+            "dist_mm": 3900.21, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (2021.8 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576570", 
-            "bearer_id": 1576570, 
+            "reason": "Bearer Start too far from beam (3071.6 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325606", 
+            "bearer_id": 1325606, 
             "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2021.8399999999999, 
+            "beam_id": 1325598, 
+            "dist_mm": 3071.5999999999999, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (3076.0 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576570", 
-            "bearer_id": 1576570, 
+            "reason": "Bearer End too far from beam (2015.1 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325606", 
+            "bearer_id": 1325606, 
             "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 3076.02, 
+            "beam_id": 1325598, 
+            "dist_mm": 2015.1099999999999, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (196.5 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576572", 
-            "bearer_id": 1576572, 
+            "reason": "Bearer Start too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325598 / Bearer 1325608", 
+            "bearer_id": 1325608, 
             "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 196.5, 
+            "beam_id": 1325598, 
+            "dist_mm": 2321.8400000000001, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2326.5 mm).", 
-            "pair_name": "Beam 1556979 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1556979, 
-            "dist_mm": 2326.5100000000002, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (8235.2 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 8235.1900000000005, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (7902.2 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 7902.1700000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (6448.4 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 6448.3999999999996, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (6017.3 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 6017.3000000000002, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (4738.4 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 4738.4200000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4132.6 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 4132.6300000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2326.4 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 2326.3699999999999, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (194.8 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 194.78, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (3065.1 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 3065.1399999999999, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2005.3 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 2005.25, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (4513.5 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 4513.5299999999997, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (3872.7 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 3872.7199999999998, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576568", 
-            "bearer_id": 1576568, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 2322.79, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "pair_name": "Beam 1557012 / Bearer 1576568", 
-            "bearer_id": 1576568, 
+            "pair_name": "Beam 1325598 / Bearer 1325608", 
+            "bearer_id": 1325608, 
             "valid_joint": "YES", 
-            "beam_id": 1557012, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325598, 
+            "dist_mm": 130.08000000000001, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576570", 
-            "bearer_id": 1576570, 
+            "reason": "Bearer Start too far from beam (3900.2 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325508", 
+            "bearer_id": 1325508, 
             "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325601, 
+            "dist_mm": 3900.21, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1557012 / Bearer 1576570", 
-            "bearer_id": 1576570, 
+            "reason": "Bearer End too far from beam (4537.1 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 4537.1400000000003, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2015.1 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 2015.1099999999999, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (3071.6 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 3071.5999999999999, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325601 / Bearer 1325512", 
+            "bearer_id": 1325512, 
             "valid_joint": "YES", 
-            "beam_id": 1557012, 
-            "dist_mm": 146.03999999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1557012 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "NO", 
-            "beam_id": 1557012, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325601, 
+            "dist_mm": 130.08000000000001, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "pair_name": "Beam 1557012 / Bearer 1576572", 
-            "bearer_id": 1576572, 
+            "reason": "Bearer End too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 2321.8400000000001, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325601 / Bearer 1325556", 
+            "bearer_id": 1325556, 
             "valid_joint": "YES", 
-            "beam_id": 1557012, 
-            "dist_mm": 146.03999999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (7902.2 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576556", 
-            "bearer_id": 1576556, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 7902.1700000000001, 
+            "beam_id": 1325601, 
+            "dist_mm": 3.7999999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (8235.2 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576556", 
-            "bearer_id": 1576556, 
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325556", 
+            "bearer_id": 1325556, 
             "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 8235.1900000000005, 
+            "beam_id": 1325601, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "reason": "Bearer Start too far from beam (6017.3 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 6017.3000000000002, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (6448.4 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576558", 
-            "bearer_id": 1576558, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 6448.3999999999996, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (4132.6 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 4132.6300000000001, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4738.4 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576560", 
-            "bearer_id": 1576560, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 4738.4200000000001, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (194.8 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 194.78, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (2326.4 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576562", 
-            "bearer_id": 1576562, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 2326.3699999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (2005.3 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 2005.25, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (3065.1 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576564", 
-            "bearer_id": 1576564, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 3065.1399999999999, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "reason": "Bearer Start too far from beam (3872.7 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 3872.7199999999998, 
-            "bearer_end_tested": "Start"
-        }, 
-        {
-            "reason": "Bearer End too far from beam (4513.5 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576566", 
-            "bearer_id": 1576566, 
-            "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 4513.5299999999997, 
-            "bearer_end_tested": "End"
-        }, 
-        {
-            "pair_name": "Beam 1557015 / Bearer 1576568", 
-            "bearer_id": 1576568, 
+            "pair_name": "Beam 1325601 / Bearer 1325558", 
+            "bearer_id": 1325558, 
             "valid_joint": "YES", 
-            "beam_id": 1557015, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325601, 
+            "dist_mm": 3.7999999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576568", 
-            "bearer_id": 1576568, 
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325558", 
+            "bearer_id": 1325558, 
             "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325601, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "pair_name": "Beam 1557015 / Bearer 1576570", 
-            "bearer_id": 1576570, 
+            "pair_name": "Beam 1325601 / Bearer 1325560", 
+            "bearer_id": 1325560, 
             "valid_joint": "YES", 
-            "beam_id": 1557015, 
-            "dist_mm": 146.03999999999999, 
+            "beam_id": 1325601, 
+            "dist_mm": 3.7999999999999998, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576570", 
-            "bearer_id": 1576570, 
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325560", 
+            "bearer_id": 1325560, 
             "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325601, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "End"
         }, 
         {
-            "pair_name": "Beam 1557015 / Bearer 1576572", 
-            "bearer_id": 1576572, 
-            "valid_joint": "YES", 
-            "beam_id": 1557015, 
-            "dist_mm": 146.03999999999999, 
+            "reason": "Bearer Start too far from beam (3900.2 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 3900.21, 
             "bearer_end_tested": "Start"
         }, 
         {
-            "reason": "Bearer End too far from beam (2322.8 mm).", 
-            "pair_name": "Beam 1557015 / Bearer 1576572", 
-            "bearer_id": 1576572, 
+            "reason": "Bearer End too far from beam (4537.1 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325604", 
+            "bearer_id": 1325604, 
             "valid_joint": "NO", 
-            "beam_id": 1557015, 
-            "dist_mm": 2322.79, 
+            "beam_id": 1325601, 
+            "dist_mm": 4537.1400000000003, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2015.1 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 2015.1099999999999, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (3071.6 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 3071.5999999999999, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325601 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "YES", 
+            "beam_id": 1325601, 
+            "dist_mm": 130.08000000000001, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325601 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325601, 
+            "dist_mm": 2321.8400000000001, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (8233.2 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 8233.2000000000007, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (7900.1 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 7900.1000000000004, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (6446.3 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 6446.3000000000002, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (6015.0 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 6015.04, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (4736.1 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 4736.1300000000001, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (4130.0 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 4130.0, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325556", 
+            "bearer_id": 1325556, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 2321.8400000000001, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325646 / Bearer 1325556", 
+            "bearer_id": 1325556, 
+            "valid_joint": "YES", 
+            "beam_id": 1325646, 
+            "dist_mm": 130.06, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (3061.7 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 3061.71, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2000.0 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 2000.0, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (4511.2 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325560", 
+            "bearer_id": 1325560, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 4511.1999999999998, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (3870.0 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325560", 
+            "bearer_id": 1325560, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 3870.0, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325646 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "YES", 
+            "beam_id": 1325646, 
+            "dist_mm": 3.9300000000000002, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325646 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "YES", 
+            "beam_id": 1325646, 
+            "dist_mm": 3.9300000000000002, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325646 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325646, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "pair_name": "Beam 1325646 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "YES", 
+            "beam_id": 1325646, 
+            "dist_mm": 3.9300000000000002, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (7900.1 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 7900.1000000000004, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (8233.2 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325508", 
+            "bearer_id": 1325508, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 8233.2000000000007, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (6015.0 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 6015.04, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (6446.3 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325510", 
+            "bearer_id": 1325510, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 6446.3000000000002, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (4130.0 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 4130.0, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (4736.1 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325512", 
+            "bearer_id": 1325512, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 4736.1300000000001, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325649 / Bearer 1325556", 
+            "bearer_id": 1325556, 
+            "valid_joint": "YES", 
+            "beam_id": 1325649, 
+            "dist_mm": 130.06, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2321.8 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325556", 
+            "bearer_id": 1325556, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 2321.8400000000001, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (2000.0 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 2000.0, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (3061.7 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325558", 
+            "bearer_id": 1325558, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 3061.71, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "reason": "Bearer Start too far from beam (3870.0 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325560", 
+            "bearer_id": 1325560, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 3870.0, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (4511.2 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325560", 
+            "bearer_id": 1325560, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 4511.1999999999998, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325649 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "YES", 
+            "beam_id": 1325649, 
+            "dist_mm": 3.9300000000000002, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325604", 
+            "bearer_id": 1325604, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325649 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "YES", 
+            "beam_id": 1325649, 
+            "dist_mm": 3.9300000000000002, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325606", 
+            "bearer_id": 1325606, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 2318.1999999999998, 
+            "bearer_end_tested": "End"
+        }, 
+        {
+            "pair_name": "Beam 1325649 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "YES", 
+            "beam_id": 1325649, 
+            "dist_mm": 3.9300000000000002, 
+            "bearer_end_tested": "Start"
+        }, 
+        {
+            "reason": "Bearer End too far from beam (2318.2 mm).", 
+            "pair_name": "Beam 1325649 / Bearer 1325608", 
+            "bearer_id": 1325608, 
+            "valid_joint": "NO", 
+            "beam_id": 1325649, 
+            "dist_mm": 2318.1999999999998, 
             "bearer_end_tested": "End"
         }
     ], 
@@ -961,5 +953,5 @@
     "bearer_type_id": 748943, 
     "beam_type_id": 907392, 
     "beam_instance_count": 6, 
-    "valid_joint_count": 18
+    "valid_joint_count": 26
 }

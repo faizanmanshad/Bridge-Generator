@@ -755,11 +755,13 @@
                                             
                                             <TextBlock Text="Offset (mm)" Style="{StaticResource SectionLabel}" Margin="0,10,0,0"/>
                                             <TextBox x:Name="BracingFlangeOffset_Concrete"
-                                                     Text="30.0"
+                                                     Text="150"
                                                      Padding="4"
                                                      Width="200"
                                                      HorizontalAlignment="Left"
                                                      Margin="0,0,0,0"/>
+                                            <TextBlock Text="Distance from bearer end. Use points for decimals." 
+                                                       FontSize="10" Foreground="#888888" Margin="0,2,0,0" TextWrapping="Wrap"/>
                                         </StackPanel>
                                         
                                         <!-- Right Column: Rotation & Back Edge Offset -->
