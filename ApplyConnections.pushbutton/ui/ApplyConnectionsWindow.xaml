@@ -339,6 +339,44 @@
             </Setter>
         </Style>
 
+        <!-- ====================================================== -->
+        <!-- Catalog ComboBoxItem styles for Family/Type hierarchy   -->
+        <!-- CatalogHeaderStyle  — Family parent (non-selectable)   -->
+        <!-- CatalogChildStyle   — Type child   (indented)          -->
+        <!-- ====================================================== -->
+
+        <!-- Family group header row: navy tint bg, semibold, no pointer -->
+        <Style x:Key="CatalogHeaderStyle" TargetType="ComboBoxItem">
+            <Setter Property="Background"       Value="#EEF2F9"/>
+            <Setter Property="Foreground"       Value="{StaticResource NavyPrimary}"/>
+            <Setter Property="FontSize"         Value="11"/>
+            <Setter Property="FontWeight"       Value="SemiBold"/>
+            <Setter Property="Padding"          Value="8,5,8,5"/>
+            <Setter Property="Cursor"           Value="Arrow"/>
+            <Setter Property="IsEnabled"        Value="False"/>
+            <Setter Property="BorderThickness"  Value="0,1,0,0"/>
+            <Setter Property="BorderBrush"      Value="{StaticResource BorderInput}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Type child row: indented left padding, normal weight -->
+        <Style x:Key="CatalogChildStyle" TargetType="ComboBoxItem">
+            <Setter Property="Padding"   Value="22,3,8,3"/>
+            <Setter Property="FontSize"  Value="11"/>
+            <Setter Property="Cursor"    Value="Hand"/>
+        </Style>
+
     </Window.Resources>
 
     <!-- ================================================================ -->

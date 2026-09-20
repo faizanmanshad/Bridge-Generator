@@ -52,7 +52,13 @@ from Autodesk.Revit.DB import Transaction, TransactionStatus  # type: ignore
 
 from core.logging_utils        import get_logger
 from core.revit_compat         import element_id_value
-from core.connection_catalog   import get_connection_types, get_bracing_plate_symbols, is_available as catalog_available
+from core.connection_catalog   import (
+    get_connection_types,
+    get_bracing_plate_symbols,
+    is_available as catalog_available,
+    classify_connection_catalog,
+    classify_bracing_catalog,
+)
 from core.validation           import (
     validate_connection_selection,
     validate_main_beam,
@@ -187,6 +193,16 @@ class ApplyConnectionsWindow(object):
 
         # Available structural connection types (shared across both bridge types)
         self._connection_types = []
+
+        # Flat parallel index lists — one entry per ComboBox item.
+        # None at header positions; ConnectionTypeItem at selectable positions.
+        # Index i in this list corresponds exactly to combo.Items[i].
+        self._flat_beam_beam_items_concrete   = []  # ConnectionTypeCombo_Concrete
+        self._flat_beam_beam_items_timber     = []  # ConnectionTypeCombo_Timber
+        self._flat_bearer_beam_items_concrete = []  # ConnectionTypeCombo_BB_Concrete
+        self._flat_bearer_beam_items_timber   = []  # ConnectionTypeCombo_BB_Timber
+        self._flat_bracing_items_concrete     = []  # ConnectionTypeCombo_Bracing_Concrete
+        self._flat_bracing_items_timber       = []  # ConnectionTypeCombo_Bracing_Timber
 
         self._load_xaml()
         self._bind_controls()
@@ -326,11 +342,106 @@ class ApplyConnectionsWindow(object):
         w.FindName("BtnClose").Click += lambda s, e: self._on_close(s, e)
 
     # ------------------------------------------------------------------
+    # ComboBox item builders (hierarchy presentation layer)
+    # ------------------------------------------------------------------
+
+    def _make_header_item(self, family_name):
+        """Return a non-selectable WPF ComboBoxItem styled as a Family header.
+
+        IsEnabled=False prevents keyboard navigation and selection.
+        The style comes from CatalogHeaderStyle in the XAML resources.
+        """
+        from System.Windows.Controls import ComboBoxItem  # type: ignore
+        ci = ComboBoxItem()
+        ci.Content = family_name
+        try:
+            ci.Style = self._window.FindResource("CatalogHeaderStyle")
+        except Exception:
+            # If resource lookup fails, apply minimal styling in Python
+            from System.Windows.Media import SolidColorBrush, Color  # type: ignore
+            ci.Background = SolidColorBrush(Color.FromRgb(0xEE, 0xF2, 0xF9))
+            ci.FontWeight = getattr(
+                __import__("System.Windows", fromlist=["FontWeights"]).FontWeights,
+                "SemiBold",
+                None,
+            ) or ci.FontWeight
+        ci.IsEnabled = False
+        return ci
+
+    def _make_child_item(self, type_name, original_item):
+        """Return an indented, selectable WPF ComboBoxItem for a Type child row.
+
+        The style comes from CatalogChildStyle in the XAML resources.
+        .Tag holds the original ConnectionTypeItem for safe unwrapping.
+        """
+        from System.Windows.Controls import ComboBoxItem  # type: ignore
+        ci = ComboBoxItem()
+        ci.Content = type_name
+        ci.Tag = original_item
+        try:
+            ci.Style = self._window.FindResource("CatalogChildStyle")
+        except Exception:
+            pass
+        return ci
+
+    def _make_flat_item(self, name, original_item):
+        """Return a normal, selectable WPF ComboBoxItem for a flat (non-grouped) row.
+
+        No indent. .Tag holds the original ConnectionTypeItem.
+        """
+        from System.Windows.Controls import ComboBoxItem  # type: ignore
+        ci = ComboBoxItem()
+        ci.Content = name
+        ci.Tag = original_item
+        return ci
+
+    def _build_catalog_combo_items(self, entries):
+        """Convert a list of CatalogEntry objects into (wpf_items, flat_items).
+
+        wpf_items  : list of ComboBoxItem — to be added to combo.Items in order.
+        flat_items : parallel list of ConnectionTypeItem-or-None.
+                     None at every header position; ConnectionTypeItem at every
+                     selectable position.
+
+        The two lists are always the same length.
+        """
+        wpf_items  = []
+        flat_items = []
+        emitted_families = {}  # family_int_id → bool (already emitted a header)
+
+        for entry in entries:
+            if entry.kind == "family_type":
+                fid = entry.family_int_id
+                if fid not in emitted_families:
+                    emitted_families[fid] = True
+                    header = self._make_header_item(entry.family_name)
+                    wpf_items.append(header)
+                    flat_items.append(None)  # header — not an applicable item
+
+                child = self._make_child_item(entry.type_name, entry.original_item)
+                wpf_items.append(child)
+                flat_items.append(entry.original_item)
+
+            else:  # flat
+                flat_ci = self._make_flat_item(entry.type_name, entry.original_item)
+                wpf_items.append(flat_ci)
+                flat_items.append(entry.original_item)
+
+        return wpf_items, flat_items
+
+    # ------------------------------------------------------------------
     # Populate connection type dropdowns
     # ------------------------------------------------------------------
 
     def _populate_connection_dropdowns(self):
-        """Load structural connection types from the document into both dropdowns."""
+        """Load structural connection types from the document into all dropdowns.
+
+        Classifies each catalog item via the real Revit API to detect genuine
+        FamilySymbol->Family relationships, then builds Family-header + child-Type
+        rows.  Items with no genuine hierarchy remain as flat selectable rows.
+        Family headers are non-selectable (IsEnabled=False) and do not count
+        toward the connection-type count shown in the footer.
+        """
         self._connection_types = get_connection_types(self._doc)
 
         if not catalog_available():
@@ -366,19 +477,84 @@ class ApplyConnectionsWindow(object):
             self._logger.info("No connection types found in document")
             return
 
-        # Populate all dropdowns (Beam-Beam, Bearer-Beam, and Bracing for each bridge type)
-        for ct in self._connection_types:
-            self._conn_combo_concrete.Items.Add(ct.name)
-            self._conn_combo_timber.Items.Add(ct.name)
-            self._bb_conn_combo_concrete.Items.Add(ct.name)
-            self._bb_conn_combo_timber.Items.Add(ct.name)
-            
-        self._conn_combo_concrete.SelectedIndex    = 0
-        self._conn_combo_timber.SelectedIndex      = 0
-        self._bb_conn_combo_concrete.SelectedIndex = 0
-        self._bb_conn_combo_timber.SelectedIndex   = 0
-        
-        # Populate Bracing dropdowns using custom FamilySymbols
+        # ------------------------------------------------------------------
+        # Classify catalog into Family/Type hierarchy entries
+        # ------------------------------------------------------------------
+        try:
+            conn_entries = classify_connection_catalog(self._connection_types, self._doc)
+        except Exception as ex:
+            self._logger.warning("Catalog classification failed; falling back to flat", exc=ex)
+            from core.connection_catalog import CatalogEntry
+            conn_entries = [
+                CatalogEntry("flat", None, None, ct.name, ct)
+                for ct in self._connection_types
+            ]
+
+        # Build WPF items + parallel flat index lists for Beam-Beam combos
+        bb_wpf_items, bb_flat = self._build_catalog_combo_items(conn_entries)
+
+        # Beam-Beam Concrete
+        self._flat_beam_beam_items_concrete = list(bb_flat)
+        for ci in bb_wpf_items:
+            self._conn_combo_concrete.Items.Add(ci)
+        self._conn_combo_concrete.SelectedIndex = self._first_selectable(bb_flat)
+
+        # Beam-Beam Timber (independent copy of same items)
+        self._flat_beam_beam_items_timber = list(bb_flat)
+        for ci in bb_wpf_items:
+            # Must create new ComboBoxItem objects — a single object can only
+            # be owned by one WPF Items collection at a time.
+            from System.Windows.Controls import ComboBoxItem  # type: ignore
+            new_ci = ComboBoxItem()
+            new_ci.Content  = ci.Content
+            new_ci.Tag      = ci.Tag
+            new_ci.IsEnabled = ci.IsEnabled
+            try:
+                if ci.IsEnabled:
+                    new_ci.Style = self._window.FindResource("CatalogChildStyle")
+                else:
+                    new_ci.Style = self._window.FindResource("CatalogHeaderStyle")
+            except Exception:
+                pass
+            self._conn_combo_timber.Items.Add(new_ci)
+        self._conn_combo_timber.SelectedIndex = self._first_selectable(bb_flat)
+
+        # Build WPF items + parallel flat index lists for Bearer-Beam combos
+        # (same underlying entries as Beam-Beam but each combo owns its own objects)
+        def _clone_combo_items(wpf_items, flat_items, target_combo, flat_list_attr):
+            """Clone wpf_items into target_combo and store the flat index list."""
+            cloned_flat = list(flat_items)
+            setattr(self, flat_list_attr, cloned_flat)
+            for ci in wpf_items:
+                from System.Windows.Controls import ComboBoxItem  # type: ignore
+                new_ci = ComboBoxItem()
+                new_ci.Content   = ci.Content
+                new_ci.Tag       = ci.Tag
+                new_ci.IsEnabled = ci.IsEnabled
+                try:
+                    if ci.IsEnabled:
+                        new_ci.Style = self._window.FindResource("CatalogChildStyle")
+                    else:
+                        new_ci.Style = self._window.FindResource("CatalogHeaderStyle")
+                except Exception:
+                    pass
+                target_combo.Items.Add(new_ci)
+            target_combo.SelectedIndex = self._first_selectable(flat_items)
+
+        _clone_combo_items(
+            bb_wpf_items, bb_flat,
+            self._bb_conn_combo_concrete,
+            "_flat_bearer_beam_items_concrete",
+        )
+        _clone_combo_items(
+            bb_wpf_items, bb_flat,
+            self._bb_conn_combo_timber,
+            "_flat_bearer_beam_items_timber",
+        )
+
+        # ------------------------------------------------------------------
+        # Bracing dropdown — uses get_bracing_plate_symbols (FamilySymbols)
+        # ------------------------------------------------------------------
         self._bracing_plate_symbols = get_bracing_plate_symbols(self._doc)
         if not self._bracing_plate_symbols:
             self._logger.info("No custom Bracing FamilySymbols found in document")
@@ -390,17 +566,38 @@ class ApplyConnectionsWindow(object):
                 self._bracing_conn_combo_timber.Items.Add(hint)
                 self._bracing_conn_combo_timber.SelectedIndex = 0
         else:
-            for st in self._bracing_plate_symbols:
-                if self._bracing_conn_combo_concrete is not None:
-                    self._bracing_conn_combo_concrete.Items.Add(st.name)
-                if self._bracing_conn_combo_timber is not None:
-                    self._bracing_conn_combo_timber.Items.Add(st.name)
-            
-            if self._bracing_conn_combo_concrete is not None:
-                self._bracing_conn_combo_concrete.SelectedIndex = 0
-            if self._bracing_conn_combo_timber is not None:
-                self._bracing_conn_combo_timber.SelectedIndex = 0
+            try:
+                bracing_entries = classify_bracing_catalog(self._bracing_plate_symbols, self._doc)
+            except Exception as ex:
+                self._logger.warning("Bracing catalog classification failed; falling back to flat", exc=ex)
+                from core.connection_catalog import CatalogEntry
+                bracing_entries = [
+                    CatalogEntry("flat", None, None, st.name, st)
+                    for st in self._bracing_plate_symbols
+                ]
 
+            br_wpf_items, br_flat = self._build_catalog_combo_items(bracing_entries)
+
+            # Bracing Concrete
+            self._flat_bracing_items_concrete = list(br_flat)
+            for ci in br_wpf_items:
+                if self._bracing_conn_combo_concrete is not None:
+                    self._bracing_conn_combo_concrete.Items.Add(ci)
+            if self._bracing_conn_combo_concrete is not None:
+                self._bracing_conn_combo_concrete.SelectedIndex = self._first_selectable(br_flat)
+
+            # Bracing Timber (cloned)
+            _clone_combo_items(
+                br_wpf_items, br_flat,
+                self._bracing_conn_combo_timber,
+                "_flat_bracing_items_timber",
+            ) if self._bracing_conn_combo_timber is not None else None
+
+            # Handle None timber combo gracefully
+            if self._bracing_conn_combo_timber is None:
+                self._flat_bracing_items_timber = list(br_flat)
+
+        # Footer: count only actual selectable items (exclude header Nones)
         self._set_footer(
             "{0} structural connection type(s) available.".format(len(self._connection_types))
         )
@@ -409,12 +606,23 @@ class ApplyConnectionsWindow(object):
             count=len(self._connection_types),
         )
 
+    @staticmethod
+    def _first_selectable(flat_items):
+        """Return the index of the first non-None entry in flat_items, or 0."""
+        for i, item in enumerate(flat_items):
+            if item is not None:
+                return i
+        return 0
+
     # ------------------------------------------------------------------
     # Get currently selected connection type ElementId
     # ------------------------------------------------------------------
 
     def _get_selected_connection_type_id(self, bridge_type):
-        """Return the ElementId of the selected connection type, or None.
+        """Return the ElementId of the selected Beam-Beam connection type, or None.
+
+        Uses the flat parallel index list so that Family header rows (None
+        entries) are safely ignored and never forwarded to the backend.
 
         Args:
             bridge_type: BRIDGE_CONCRETE or BRIDGE_TIMBER
@@ -423,14 +631,19 @@ class ApplyConnectionsWindow(object):
             Autodesk.Revit.DB.ElementId or None
         """
         if bridge_type == BRIDGE_CONCRETE:
-            combo = self._conn_combo_concrete
+            combo      = self._conn_combo_concrete
+            flat_items = self._flat_beam_beam_items_concrete
         else:
-            combo = self._conn_combo_timber
+            combo      = self._conn_combo_timber
+            flat_items = self._flat_beam_beam_items_timber
 
         idx = combo.SelectedIndex
-        if idx < 0 or idx >= len(self._connection_types):
+        if idx < 0 or idx >= len(flat_items):
             return None
-        return self._connection_types[idx].element_id
+        item = flat_items[idx]
+        if item is None:  # header row — no valid ElementId
+            return None
+        return item.element_id
 
     # ------------------------------------------------------------------
     # Controls for a given bridge type
@@ -497,14 +710,27 @@ class ApplyConnectionsWindow(object):
         )
 
     def _get_bracing_plate_symbol_id(self, bridge_type):
-        """Return the ElementId of the selected structural connection type for bracing, or None."""
-        combo = self._bracing_conn_combo_concrete if bridge_type == BRIDGE_CONCRETE else self._bracing_conn_combo_timber
-        if combo is None or not hasattr(self, '_bracing_plate_symbols') or not self._bracing_plate_symbols:
+        """Return the ElementId of the selected Bracing plate symbol, or None.
+
+        Uses the flat parallel index list so that Family header rows (None
+        entries) are safely ignored and never forwarded to the backend.
+        """
+        if bridge_type == BRIDGE_CONCRETE:
+            combo      = self._bracing_conn_combo_concrete
+            flat_items = self._flat_bracing_items_concrete
+        else:
+            combo      = self._bracing_conn_combo_timber
+            flat_items = self._flat_bracing_items_timber
+
+        if combo is None or not flat_items:
             return None
         idx = combo.SelectedIndex
-        if idx < 0 or idx >= len(self._bracing_plate_symbols):
+        if idx < 0 or idx >= len(flat_items):
             return None
-        return self._bracing_plate_symbols[idx].element_id
+        item = flat_items[idx]
+        if item is None:  # header row
+            return None
+        return item.element_id
 
     def _on_select_bracing_beam(self, bridge_type):
         """Allow user to pick a Reference Beam for Bracing Connection."""
@@ -691,16 +917,25 @@ class ApplyConnectionsWindow(object):
 
 
     def _get_bb_connection_type_id(self, bridge_type):
-        """Return the ElementId of the selected Bearer-Beam connection type, or None."""
+        """Return the ElementId of the selected Bearer-Beam connection type, or None.
+
+        Uses the flat parallel index list so that Family header rows (None
+        entries) are safely ignored and never forwarded to the backend.
+        """
         if bridge_type == BRIDGE_CONCRETE:
-            combo = self._bb_conn_combo_concrete
+            combo      = self._bb_conn_combo_concrete
+            flat_items = self._flat_bearer_beam_items_concrete
         else:
-            combo = self._bb_conn_combo_timber
+            combo      = self._bb_conn_combo_timber
+            flat_items = self._flat_bearer_beam_items_timber
 
         idx = combo.SelectedIndex
-        if idx < 0 or idx >= len(self._connection_types):
+        if idx < 0 or idx >= len(flat_items):
             return None
-        return self._connection_types[idx].element_id
+        item = flat_items[idx]
+        if item is None:  # header row
+            return None
+        return item.element_id
 
     # ------------------------------------------------------------------
     # Event: Select Reference Beam (Bearer–Beam)

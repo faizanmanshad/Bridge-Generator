@@ -147,6 +147,129 @@ def get_connection_types(doc):
     return items
 
 
+# ---------------------------------------------------------------------------
+# Catalog classification — Family/Type hierarchy detection
+# ---------------------------------------------------------------------------
+
+class CatalogEntry(object):
+    """One row emitted by the classification layer.
+
+    Attributes:
+        kind            : str  — "family_type" or "flat"
+        family_int_id   : int  — integer id of the Family element, or None
+        family_name     : str  — Family display name, or None
+        type_name       : str  — Type display name
+        original_item   : ConnectionTypeItem — original catalog item;
+                          element_id / int_id are always valid here.
+    """
+
+    def __init__(self, kind, family_int_id, family_name, type_name, original_item):
+        self.kind          = kind
+        self.family_int_id = family_int_id
+        self.family_name   = family_name
+        self.type_name     = type_name
+        self.original_item = original_item
+
+    def __repr__(self):
+        return "CatalogEntry({0!r}, family={1!r}, type={2!r}, id={3})".format(
+            self.kind, self.family_name, self.type_name,
+            self.original_item.int_id,
+        )
+
+
+def _probe_family_symbol(elem):
+    """Try to extract (family_int_id, family_name, type_name) from a Revit element.
+
+    Uses defensive attribute/property access so it works across Revit 2022 and
+    2024, and is safe when called on non-FamilySymbol element types.
+
+    Returns:
+        (int, str, str) if a genuine FamilySymbol relationship is found
+        None            otherwise (caller must treat item as flat)
+    """
+    try:
+        from Autodesk.Revit.DB import FamilySymbol  # type: ignore
+        if not isinstance(elem, FamilySymbol):
+            return None
+    except Exception:
+        # If FamilySymbol import fails, cannot classify — treat as flat
+        return None
+
+    try:
+        family = elem.Family
+        if family is None:
+            return None
+        fam_id_val = element_id_value(family.Id)
+        fam_name   = family.Name or ""
+        # Re-use the same safe name helper used throughout this module
+        type_name  = _get_safe_name(elem)
+        return (fam_id_val, fam_name, type_name)
+    except Exception:
+        return None
+
+
+def classify_connection_catalog(connection_types, doc):
+    """Classify a flat list of ConnectionTypeItem objects into CatalogEntry rows.
+
+    For items backed by a genuine FamilySymbol the entry has kind="family_type"
+    and captures the Family identity.  Items that are not FamilySymbol elements
+    (e.g. native StructuralConnectionHandlerType) receive kind="flat".
+
+    Classification comes exclusively from the real Revit API — no name parsing.
+
+    Args:
+        connection_types : list[ConnectionTypeItem]
+        doc              : Autodesk.Revit.DB.Document
+
+    Returns:
+        list[CatalogEntry]  — same length and order as connection_types.
+    """
+    entries = []
+    for item in connection_types:
+        try:
+            elem   = doc.GetElement(item.element_id)
+            result = _probe_family_symbol(elem)
+        except Exception:
+            result = None
+
+        if result is not None:
+            fam_id_val, fam_name, type_name = result
+            entries.append(CatalogEntry(
+                kind          = "family_type",
+                family_int_id = fam_id_val,
+                family_name   = fam_name,
+                type_name     = type_name,
+                original_item = item,
+            ))
+        else:
+            entries.append(CatalogEntry(
+                kind          = "flat",
+                family_int_id = None,
+                family_name   = None,
+                type_name     = item.name,
+                original_item = item,
+            ))
+    return entries
+
+
+def classify_bracing_catalog(bracing_plate_symbols, doc):
+    """Classify bracing plate symbols into CatalogEntry rows.
+
+    Bracing symbols are already FamilySymbol objects (collected by
+    get_bracing_plate_symbols). We probe the live element to build the
+    genuine Family/Type hierarchy.
+
+    Args:
+        bracing_plate_symbols : list[ConnectionTypeItem]
+        doc                   : Autodesk.Revit.DB.Document
+
+    Returns:
+        list[CatalogEntry]  — same length and order as bracing_plate_symbols.
+    """
+    # Delegate to the same generic classifier — FamilySymbol detection applies
+    return classify_connection_catalog(bracing_plate_symbols, doc)
+
+
 def find_by_id(connection_types, element_id):
     """Return the ConnectionTypeItem with the given ElementId, or None.
 

@@ -503,6 +503,14 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             diag_p_flange = XYZ.Zero
             diag_p_target_ref = insertion_point
             
+            diag_beam_start = "N/A"
+            diag_beam_end = "N/A"
+            diag_beam_plan_dir = "N/A"
+            diag_bearer_mid = "N/A"
+            diag_dot_check = "N/A"
+            diag_host_target = "N/A"
+            diag_symbol_info = "N/A"
+            
             final_insertion_point = insertion_point
             
             try:
@@ -513,16 +521,20 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                 ref_beam = doc.GetElement(self.ref_beam_id)
                 if ref_beam:
                     beam_curve = ref_beam.Location.Curve
-                    beam_dir = beam_curve.Direction.Normalize()
+                    beam_o = beam_curve.GetEndPoint(0)
+                    beam_e = beam_curve.GetEndPoint(1)
+                    diag_beam_start = "({}, {}, {})".format(round(beam_o.X, 2), round(beam_o.Y, 2), round(beam_o.Z, 2))
+                    diag_beam_end = "({}, {}, {})".format(round(beam_e.X, 2), round(beam_e.Y, 2), round(beam_e.Z, 2))
+                    
+                    raw_beam_dir = beam_curve.Direction if hasattr(beam_curve, "Direction") else (beam_e - beam_o)
+                    # Plan direction of beam
+                    beam_dir = XYZ(raw_beam_dir.X, raw_beam_dir.Y, 0.0).Normalize()
+                    diag_beam_plan_dir = "({}, {}, {})".format(round(beam_dir.X, 2), round(beam_dir.Y, 2), round(beam_dir.Z, 2))
                     
                     # Project both to the face plane
                     # Face normal is global_normal
-                    dot_beam = beam_dir.DotProduct(global_normal)
-                    proj_beam_dir = (beam_dir - global_normal * dot_beam).Normalize()
-                    
-                    # Determine forward and side directions
-                    forward_dir = ref_dir # Bearer direction
-                    side_dir = forward_dir.CrossProduct(global_normal).Normalize()
+                    dot_beam = raw_beam_dir.DotProduct(global_normal)
+                    proj_beam_dir = (raw_beam_dir - global_normal * dot_beam).Normalize()
                     
                     # --- NEW PARAMETER-DRIVEN LATERAL OFFSET ---
                     try:
@@ -543,39 +555,50 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                         # 2. Convert user offset to internal units
                         user_offset_internal = self.user_flange_offset_mm / 304.8
                         
-                        # 3. Determine Beam Centerline reference point
-                        proj_result = beam_curve.Project(insertion_point)
-                        if proj_result is None:
-                            raise Exception("Could not project plate point onto Beam LocationCurve.")
-                        p_center = proj_result.XYZPoint
+                        # 3. Determine Beam Centerline reference point (from click point)
+                        # The user click provides a robust coordinate for both station and left/right side.
+                        u = (insertion_point - beam_o).DotProduct(beam_dir)
+                        p_center = beam_o + beam_dir * u
                         
-                        # 4. Determine which side of the beam contains the bearer
-                        bearer_curve = ref_bearer.Location.Curve
-                        ep0 = bearer_curve.GetEndPoint(0)
-                        ep1 = bearer_curve.GetEndPoint(1)
-                        
-                        # Pick the endpoint that is furthest from the beam centerline
-                        if ep0.DistanceTo(p_center) > ep1.DistanceTo(p_center):
-                            bearer_side_point = ep0
-                        else:
-                            bearer_side_point = ep1
-                            
-                        raw_side_vector = bearer_side_point - p_center
+                        # 4. Determine Automatic Left/Right Side
+                        v = insertion_point - p_center
+                        v_plan = XYZ(v.X, v.Y, 0.0)
                         
                         # Remove longitudinal component
-                        lateral_vector = raw_side_vector - beam_dir * raw_side_vector.DotProduct(beam_dir)
-                        if lateral_vector.IsAlmostEqualTo(XYZ.Zero):
-                            raise Exception("Bearer aligns perfectly with Beam. Cannot determine lateral side.")
+                        side_component = v_plan - beam_dir * v_plan.DotProduct(beam_dir)
+                        if side_component.IsAlmostEqualTo(XYZ.Zero):
+                            raise Exception("Click point aligns perfectly with Beam in plan. Cannot determine lateral side.")
                             
-                        direction_toward_bearer = lateral_vector.Normalize()
+                        direction_toward_bearer = side_component.Normalize()
                         
-                        # 5. Apply Mathematical Correction to insertion point
-                        # This places the *FamilyOrigin* exactly at the target reference edge.
-                        current_lateral = (insertion_point - p_center).DotProduct(direction_toward_bearer)
-                        desired_lateral = (beam_width_internal / 2.0) + user_offset_internal
-                        lateral_delta = desired_lateral - current_lateral
+                        # Align family orientation with the calculated lateral direction
+                        forward_dir = direction_toward_bearer
+                        ref_dir = direction_toward_bearer
                         
-                        final_insertion_point = insertion_point + direction_toward_bearer * lateral_delta
+                        # Dot check proving it points toward bearer in plan
+                        dot_check = v_plan.DotProduct(direction_toward_bearer)
+                        diag_dot_check = str(round(dot_check, 4))
+                        
+                        # 5. Calculate Flange Edge and Target in Plan
+                        p_flange = p_center + direction_toward_bearer * (beam_width_internal / 2.0)
+                        p_physical_target_plan = p_flange + direction_toward_bearer * user_offset_internal
+                        
+                        # 6. Solve Elevation against Bearer Bottom Face
+                        # Plane equation: Normal . (P - Origin) = 0
+                        face_pt = insertion_point
+                        nz = global_normal.Z
+                        if abs(nz) < 1e-6:
+                            # Face is vertical, cannot determine elevation from plan coordinates alone.
+                            target_z = face_pt.Z
+                        else:
+                            dx = p_physical_target_plan.X - face_pt.X
+                            dy = p_physical_target_plan.Y - face_pt.Y
+                            target_z = face_pt.Z - (global_normal.X * dx + global_normal.Y * dy) / nz
+                            
+                        final_insertion_point = XYZ(p_physical_target_plan.X, p_physical_target_plan.Y, target_z)
+                        diag_host_target = "({}, {}, {})".format(round(final_insertion_point.X, 2), round(final_insertion_point.Y, 2), round(final_insertion_point.Z, 2))
+                        
+                        lateral_delta = 0.0  # Kept for diagnostic reporting compatibility
                         
                         # Store these for diagnostics later
                         diag_beam_name = param.Definition.Name
@@ -583,10 +606,13 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
                         diag_beam_internal = beam_width_internal
                         diag_beam_mm = beam_width_internal * 304.8
                         
+                        # Record the click point instead of bearer mid for diagnostics
+                        diag_bearer_mid = "({}, {}, {}) (Click Pt)".format(round(insertion_point.X, 2), round(insertion_point.Y, 2), round(insertion_point.Z, 2))
+                        
                         diag_p_center = p_center
                         diag_side_dir = direction_toward_bearer
-                        diag_p_flange = p_center + direction_toward_bearer * (beam_width_internal / 2.0)
-                        diag_p_target_ref = final_insertion_point
+                        diag_p_flange = p_flange
+                        diag_p_target_ref = p_physical_target_plan
                         
                         diag_calc_origin = (
                             "Width: {} mm, Offset: {} mm | "
@@ -827,36 +853,78 @@ class ApplyConnectionsExternalEventHandler(IExternalEventHandler):
             
             success_msg = (
                 "SUCCESSFUL PLACEMENT\n\n"
-                "[BEAM DATA]\n"
-                "BeamId: {0} | BearerId: {1}\n"
-                "Width Param: '{2}' ({3})\n"
-                "Beam Width: {4} mm | Half Width: {5} mm\n"
-                "User Offset: {6} mm\n\n"
-                "[VECTORS]\n"
-                "Centerline XYZ: {7}\n"
-                "Side Dir XYZ: {8}\n"
-                "Flange Edge XYZ: {9}\n"
-                "Target Ref XYZ: {10}\n\n"
-                "[ORIGIN COMPENSATION]\n"
-                "Exact Overload: {11}\n"
-                "Rotation: {12}\n"
-                "Origin offset calculation: {13}\n"
-                "Final Family Origin XYZ: {14}\n\n"
-                "FINAL PHYSICAL FLANGE-TO-PLATE-REF DISTANCE: {15}"
+                "[SELECTION]\n"
+                "BeamId: {0}\n"
+                "BearerId: {1}\n"
+                "SymbolId / Type: {2}\n"
+                "Face reference status: {3}\n\n"
+                "[BEAM LOCAL FRAME]\n"
+                "Beam start: {4}\n"
+                "Beam end: {5}\n"
+                "Beam plan direction: {6}\n"
+                "Bearer midpoint/centerline point: {7}\n"
+                "Derived side direction: {8}\n"
+                "Dot/check proving side points toward Bearer: {9}\n\n"
+                "[WIDTH]\n"
+                "Width parameter: '{10}'\n"
+                "Raw AsDouble value: {11}\n"
+                "Width in mm for display: {12} mm\n"
+                "Half width: {13} mm\n\n"
+                "[STATION]\n"
+                "P_center / Beam point at selected Bearer station: {14}\n\n"
+                "[LATERAL TARGET]\n"
+                "P_flange: {15}\n"
+                "User offset mm: {16} mm\n"
+                "Offset internal: {17}\n"
+                "P_physical_target: {18}\n\n"
+                "[HOST FACE]\n"
+                "Face normal: {19}\n"
+                "Face plane origin: {20}\n"
+                "Calculated hosted target point: {21}\n\n"
+                "[INSTANCE]\n"
+                "Initial FamilyInstance origin: {22}\n"
+                "Final orientation: {23}\n"
+                "Transform origin: {24}\n\n"
+                "[PHYSICAL GEOMETRY]\n"
+                "Physical beam-facing cleat reference point/projection: {25}\n"
+                "Origin-to-physical-reference scalar: {26} mm\n"
+                "Required correction scalar: {27} mm\n\n"
+                "[FINAL VALIDATION]\n"
+                "Requested flange-to-cleat distance: {28} mm\n"
+                "Measured physical flange-to-cleat distance: {29}\n"
+                "Difference/error: {30} mm"
             ).format(
-                self.ref_beam_id.IntegerValue, self.ref_bearer_id.IntegerValue,
-                diag_beam_name, diag_beam_storage,
-                round(diag_beam_mm, 1), round(diag_beam_mm / 2.0, 1),
-                round(self.user_flange_offset_mm, 1),
-                "({}, {}, {})".format(round(diag_p_center.X, 2), round(diag_p_center.Y, 2), round(diag_p_center.Z, 2)),
-                "({}, {}, {})".format(round(diag_side_dir.X, 2), round(diag_side_dir.Y, 2), round(diag_side_dir.Z, 2)),
-                "({}, {}, {})".format(round(diag_p_flange.X, 2), round(diag_p_flange.Y, 2), round(diag_p_flange.Z, 2)),
-                "({}, {}, {})".format(round(diag_p_target_ref.X, 2), round(diag_p_target_ref.Y, 2), round(diag_p_target_ref.Z, 2)),
-                diag_exact_overload,
-                diag_rotation,
-                diag_offset_calc,
-                "({}, {}, {})".format(round(p_origin_final.X, 2), round(p_origin_final.Y, 2), round(p_origin_final.Z, 2)),
-                final_physical_dist
+                self.ref_beam_id.IntegerValue, # 0
+                self.ref_bearer_id.IntegerValue, # 1
+                "{} / {}".format(symbol_id.IntegerValue, diag_symbol_class), # 2
+                "Valid Planar" if diag_is_planar else "Non-Planar/Fallback", # 3
+                diag_beam_start, # 4
+                diag_beam_end, # 5
+                diag_beam_plan_dir, # 6
+                diag_bearer_mid, # 7
+                "({}, {}, {})".format(round(diag_side_dir.X, 2), round(diag_side_dir.Y, 2), round(diag_side_dir.Z, 2)), # 8
+                diag_dot_check, # 9
+                diag_beam_name, # 10
+                round(diag_beam_internal, 4), # 11
+                round(diag_beam_mm, 1), # 12
+                round(diag_beam_mm / 2.0, 1), # 13
+                "({}, {}, {})".format(round(diag_p_center.X, 2), round(diag_p_center.Y, 2), round(diag_p_center.Z, 2)), # 14
+                "({}, {}, {})".format(round(diag_p_flange.X, 2), round(diag_p_flange.Y, 2), round(diag_p_flange.Z, 2)), # 15
+                round(self.user_flange_offset_mm, 1), # 16
+                round(self.user_flange_offset_mm / 304.8, 4), # 17
+                "({}, {}, {})".format(round(diag_p_target_ref.X, 2), round(diag_p_target_ref.Y, 2), round(diag_p_target_ref.Z, 2)), # 18
+                diag_face_normal, # 19
+                diag_face_origin, # 20
+                diag_host_target, # 21
+                "({}, {}, {})".format(round(insertion_point.X, 2), round(insertion_point.Y, 2), round(insertion_point.Z, 2)), # 22
+                diag_rotation, # 23
+                "({}, {}, {})".format(round(p_origin_final.X, 2), round(p_origin_final.Y, 2), round(p_origin_final.Z, 2)), # 24
+                "({}, {}, {})".format(round(p_phys_ref_final.X, 2), round(p_phys_ref_final.Y, 2), round(p_phys_ref_final.Z, 2)) if 'p_phys_ref_final' in locals() else "N/A", # 25
+                round(plate_origin_to_reference * 304.8, 4) if plate_origin_to_reference is not None else "N/A", # 26
+                round(shift_mag * -304.8, 4) if plate_origin_to_reference is not None else "N/A", # 27
+                round(self.user_flange_offset_mm, 1), # 28
+                final_physical_dist, # 29
+                round(dist_flange_to_phys * 304.8 - self.user_flange_offset_mm, 4) if 'dist_flange_to_phys' in locals() else "N/A" # 30
             )
             
             if self.result_callback:
